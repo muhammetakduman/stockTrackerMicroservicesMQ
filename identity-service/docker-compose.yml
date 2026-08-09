@@ -1,0 +1,66 @@
+version: "3.9"
+
+services:
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: identity-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${DB_NAME:-identity_db}
+      POSTGRES_USER: ${DB_USERNAME:-identity_user}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-identity_pass}
+    ports:
+      - "${DB_PORT:-5432}:5432"
+    volumes:
+      - identity_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME:-identity_user} -d ${DB_NAME:-identity_db}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks:
+      - identity-network
+
+  identity-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: identity-service
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: ${DB_NAME:-identity_db}
+      DB_USERNAME: ${DB_USERNAME:-identity_user}
+      DB_PASSWORD: ${DB_PASSWORD:-identity_pass}
+      JWT_PRIVATE_KEY_PATH: classpath:certs/dev-private.pem
+      JWT_PUBLIC_KEY_PATH: classpath:certs/dev-public.pem
+      JWT_ACCESS_TOKEN_EXPIRATION: ${JWT_ACCESS_TOKEN_EXPIRATION:-900}
+      JWT_REFRESH_TOKEN_EXPIRATION: ${JWT_REFRESH_TOKEN_EXPIRATION:-604800}
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@example.com}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-Admin123!@#}
+    ports:
+      - "8080:8080"
+    networks:
+      - identity-network
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8080/actuator/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+volumes:
+  identity_postgres_data:
+    driver: local
+
+networks:
+  identity-network:
+    driver: bridge
+

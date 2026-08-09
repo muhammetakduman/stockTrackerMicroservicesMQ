@@ -1,0 +1,32 @@
+services:
+
+  sales-postgres:
+    image: postgres:16-alpine
+    container_name: sales-postgres
+    restart: unless-stopped
+
+    environment:
+      POSTGRES_DB: ${DB_NAME:-sales_db}
+      POSTGRES_USER: ${DB_USERNAME:-sales_user}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-sales_pass}
+
+    ports:
+      - "${DB_PORT:-5435}:5432"
+
+    volumes:
+      - sales_postgres_data:/var/lib/postgresql/data
+
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U ${DB_USERNAME:-sales_user} -d ${DB_NAME:-sales_db}"
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+
+volumes:
+  sales_postgres_data:

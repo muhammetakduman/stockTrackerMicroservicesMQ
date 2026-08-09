@@ -1,0 +1,99 @@
+spring:
+  application:
+    name: purchase-service
+
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5434}/${DB_NAME:purchase_db}
+    username: ${DB_USERNAME:purchase_user}
+    password: ${DB_PASSWORD:purchase_pass}
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    open-in-view: false
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: true
+        jdbc:
+          time_zone: UTC
+
+  rabbitmq:
+    host: ${RABBITMQ_HOST:localhost}
+    port: ${RABBITMQ_PORT:5672}
+    username: ${RABBITMQ_USERNAME:guest}
+    password: ${RABBITMQ_PASSWORD:guest}
+    virtual-host: /
+    publisher-confirm-type: correlated
+    publisher-returns: true
+    template:
+      mandatory: true
+      retry:
+        enabled: true
+        initial-interval: 1s
+        max-attempts: 3
+        multiplier: 2
+        max-interval: 10s
+
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          public-key-location: classpath:certs/dev-public.pem
+
+  jackson:
+    time-zone: UTC
+
+server:
+  port: 8082
+  shutdown: graceful
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: always
+  health:
+    rabbit:
+      enabled: true
+    db:
+      enabled: true
+
+logging:
+  level:
+    root: INFO
+    org.springframework.security: INFO
+    org.hibernate.SQL: WARN
+
+app:
+  outbox:
+    publisher:
+      fixed-delay-ms: 2000
+      batch-size: 20
+      max-attempts: 5
+      confirm-timeout-ms: 5000
+  messaging:
+    purchase:
+      exchange: purchase.exchange
+      routing-key: purchase.created
+
+    stock-result:
+      exchange: stock.result.exchange
+
+      queue: purchase.stock-increase-completed.queue
+      routing-key: stock.increase.completed
+
+      failed-queue: purchase.stock-increase-failed.queue
+      failed-routing-key: stock.increase.failed
+
+      dead-letter-exchange: stock.result.dlx
+
+      completed-dead-letter-queue: purchase.stock-increase-completed.dlq
+      completed-dead-letter-routing-key: stock.increase.completed.dead
+
+      failed-dead-letter-queue: purchase.stock-increase-failed.dlq
+      failed-dead-letter-routing-key: stock.increase.failed.dead

@@ -1,0 +1,95 @@
+spring:
+  application:
+    name: inventory-service
+
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5433}/${DB_NAME:inventory_db}
+    username: ${DB_USERNAME:inventory_user}
+    password: ${DB_PASSWORD:inventory_pass}
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: true
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+
+  rabbitmq:
+    host: ${RABBITMQ_HOST:localhost}
+    port: ${RABBITMQ_PORT:5672}
+    username: ${RABBITMQ_USERNAME:guest}
+    password: ${RABBITMQ_PASSWORD:guest}
+    virtual-host: /
+
+    # Outbox worker'ın RabbitMQ ACK/NACK cevabı alması için.
+    publisher-confirm-type: correlated
+
+    # Mesaj exchange'e ulaşıp hiçbir queue'ya yönlenmezse
+    # bunu tespit edebilmek için.
+    publisher-returns: true
+
+    template:
+      mandatory: true
+
+    listener:
+      simple:
+        default-requeue-rejected: false
+        retry:
+          enabled: true
+          max-attempts: 3
+          initial-interval: 2s
+          multiplier: 2.0
+          max-interval: 10s
+
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          public-key-location: classpath:certs/dev-public.pem
+
+server:
+  port: 8081
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: always
+
+app:
+  messaging:
+    sale:
+      exchange: sale.exchange
+      routing-key: sale.created
+      queue: inventory.sale-created.queue
+
+      dead-letter-exchange: sale.dlx
+      dead-letter-queue: inventory.sale-created.dlq
+      dead-letter-routing-key: sale.created.dead
+
+    purchase:
+      exchange: purchase.exchange
+      queue: inventory.purchase-created.queue
+      routing-key: purchase.created
+
+      dead-letter-exchange: purchase.dlx
+      dead-letter-queue: inventory.purchase-created.dlq
+      dead-letter-routing-key: purchase.created.failed
+
+    stock-result:
+      exchange: stock.result.exchange
+      routing-key: stock.increase.completed
+      failed-routing-key: stock.increase.failed
+
+  outbox:
+    publisher:
+      fixed-delay-ms: 2000
+      batch-size: 20
+      max-attempts: 5
+      confirm-timeout-ms: 5000

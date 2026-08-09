@@ -1,0 +1,25 @@
+services:
+
+  # RabbitMQ burda YOK → inventory-service/docker-compose.yml'deki ortak broker kullanılır (port 5672)
+  purchase-postgres:
+    image: postgres:16-alpine
+    container_name: purchase-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${DB_NAME:-purchase_db}
+      POSTGRES_USER: ${DB_USERNAME:-purchase_user}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-purchase_pass}
+    ports:
+      - "${DB_PORT:-5434}:5432"
+    volumes:
+      - purchase_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME:-purchase_user} -d ${DB_NAME:-purchase_db}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+volumes:
+  purchase_postgres_data:
+    driver: local

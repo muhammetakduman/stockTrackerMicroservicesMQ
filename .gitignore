@@ -1,0 +1,46 @@
+# ============================================================
+# ROOT .gitignore — businessSafory microservices
+# ============================================================
+
+# ── Environment / Secrets ───────────────────────────────────
+.env
+.env.local
+.env.*.local
+**/.env
+**/.env.local
+
+# ── Private Keys & Certificates ─────────────────────────────
+# Dev keys are regenerated locally — see README for keygen commands
+**/*-private.pem
+**/certs/dev-private.pem
+
+# ── Maven build output ───────────────────────────────────────
+**/target/
+!**/target/.gitkeep
+
+# ── IDE ──────────────────────────────────────────────────────
+.idea/
+*.iml
+*.iws
+*.ipr
+.vscode/
+*.DS_Store
+
+# ── Java ─────────────────────────────────────────────────────
+*.class
+*.jar
+*.war
+*.ear
+hs_err_pid*
+replay_pid*
+
+# ── Logs ─────────────────────────────────────────────────────
+*.log
+logs/
+run.log
+
+# ── OS ───────────────────────────────────────────────────────
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+

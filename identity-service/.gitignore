@@ -1,0 +1,19 @@
+# Maven build output
+target/
+
+# Environment secrets — asla commit etme!
+.env
+.env.local
+
+# Private RSA keys
+src/main/resources/certs/*-private.pem
+src/main/resources/certs/dev-private.pem
+
+# IDE
+.idea/
+*.iml
+*.DS_Store
+
+# Logs
+*.log
+logs/

@@ -1,0 +1,18 @@
+package com.muhammet.identity_service.exception;
+
+public enum ErrorCode {
+    VALIDATION_ERROR,
+    EMAIL_ALREADY_EXISTS,
+    INVALID_CREDENTIALS,
+    USER_DISABLED,
+    USER_LOCKED,
+    USER_NOT_FOUND,
+    ROLE_NOT_FOUND,
+    INVALID_TOKEN,
+    TOKEN_EXPIRED,
+    TOKEN_REVOKED,
+    ACCESS_DENIED,
+    UNAUTHORIZED,
+    INTERNAL_SERVER_ERROR
+}
+

@@ -1,0 +1,59 @@
+spring:
+  application:
+    name: identity-service
+
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:identity_db}
+    username: ${DB_USERNAME:identity_user}
+    password: ${DB_PASSWORD:identity_pass}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 2
+      connection-timeout: 30000
+      idle-timeout: 600000
+      max-lifetime: 1800000
+      pool-name: IdentityHikariPool
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+    open-in-view: false
+    properties:
+      hibernate:
+        format_sql: false
+        jdbc:
+          time_zone: UTC
+
+
+app:
+  security:
+    jwt:
+      private-key-location: ${JWT_PRIVATE_KEY_PATH:classpath:certs/dev-private.pem}
+      public-key-location: ${JWT_PUBLIC_KEY_PATH:classpath:certs/dev-public.pem}
+      access-token-expiration-seconds: ${JWT_ACCESS_TOKEN_EXPIRATION:900}
+      refresh-token-expiration-seconds: ${JWT_REFRESH_TOKEN_EXPIRATION:604800}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: when_authorized
+
+server:
+  port: 8080
+  error:
+    include-message: never
+    include-binding-errors: never
+    include-stacktrace: never
+
+logging:
+  level:
+    com.muhammet.identity_service: INFO
+    org.springframework.security: WARN
+    org.flywaydb: INFO
+    com.zaxxer.hikari: WARN

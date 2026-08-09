@@ -1,0 +1,27 @@
+spring:
+
+  datasource:
+    url: ${SALES_DB_URL}
+    username: ${SALES_DB_USERNAME}
+    password: ${SALES_DB_PASSWORD}
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+
+  rabbitmq:
+    host: ${RABBITMQ_HOST}
+    port: ${RABBITMQ_PORT:5672}
+    username: ${RABBITMQ_USERNAME}
+    password: ${RABBITMQ_PASSWORD}
+
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          public-key-location: ${JWT_PUBLIC_KEY_LOCATION}
+
+
+server:
+  port: ${SERVER_PORT:8083}
