@@ -8,15 +8,13 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.AmqpRejectAndDontRequeueException;
 import org.springframework.amqp.core.Message;
-import org.springframework.amqp.rabbit.retry.MessageRecoverer;
 import org.springframework.stereotype.Component;
 import tools.jackson.databind.json.JsonMapper;
 
 @Component
 @RequiredArgsConstructor
 @Slf4j
-public class SaleCreatedMessageRecoverer
-        implements MessageRecoverer {
+public class SaleCreatedMessageRecoverer {
 
     private static final int MAX_REASON_LENGTH = 500;
 
@@ -25,7 +23,6 @@ public class SaleCreatedMessageRecoverer
     private final InventoryOutboxService inventoryOutboxService;
 
 
-    @Override
     public void recover(
             Message message,
             Throwable cause
