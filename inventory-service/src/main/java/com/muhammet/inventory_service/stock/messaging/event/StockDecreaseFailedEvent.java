@@ -31,6 +31,7 @@ public record StockDecreaseFailedEvent(
 
     public static final int EVENT_VERSION = 1;
 
+
     public StockDecreaseFailedEvent {
 
         Objects.requireNonNull(
@@ -38,7 +39,9 @@ public record StockDecreaseFailedEvent(
                 "Event ID cannot be null"
         );
 
-        if (eventType == null || eventType.isBlank()) {
+        if (eventType == null ||
+                eventType.isBlank()) {
+
             throw new IllegalArgumentException(
                     "Event type cannot be blank"
             );
@@ -71,7 +74,9 @@ public record StockDecreaseFailedEvent(
                 "Stock item ID cannot be null"
         );
 
-        if (errorCode == null || errorCode.isBlank()) {
+        if (errorCode == null ||
+                errorCode.isBlank()) {
+
             throw new IllegalArgumentException(
                     "Error code cannot be blank"
             );
@@ -91,6 +96,7 @@ public record StockDecreaseFailedEvent(
         );
     }
 
+
     public static StockDecreaseFailedEvent create(
             UUID sourceEventId,
             Long saleId,
@@ -98,6 +104,7 @@ public record StockDecreaseFailedEvent(
             String errorCode,
             String failureReason
     ) {
+
         return new StockDecreaseFailedEvent(
                 UUID.randomUUID(),
                 EVENT_TYPE,

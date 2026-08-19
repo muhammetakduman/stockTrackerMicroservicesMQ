@@ -1,4 +1,5 @@
 package com.muhammet.inventory_service.stock.messaging.event;
+import com.muhammet.inventory_service.stock.messaging.event.StockDecreaseCompletedEvent;
 
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -107,6 +108,7 @@ public record StockDecreaseCompletedEvent(
         );
     }
 
+
     public static StockDecreaseCompletedEvent create(
             UUID sourceEventId,
             Long saleId,
@@ -128,4 +130,5 @@ public record StockDecreaseCompletedEvent(
                 Instant.now()
         );
     }
+
 }
