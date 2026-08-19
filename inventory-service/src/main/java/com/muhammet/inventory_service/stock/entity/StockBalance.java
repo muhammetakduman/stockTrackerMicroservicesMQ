@@ -80,19 +80,33 @@ public class StockBalance {
                 this.onHandQuantity.add(quantity);
     }
 
-    public void decreaseOnHandQuantity(BigDecimal quantity) {
-        validatePositiveQuantity(quantity);
+    public void decreaseOnHandQuantity(
+            BigDecimal quantity
+    ) {
+        Objects.requireNonNull(
+                quantity,
+                "Decrease quantity cannot be null"
+        );
 
-        BigDecimal newQuantity =
-                this.onHandQuantity.subtract(quantity);
-
-        if (newQuantity.compareTo(BigDecimal.ZERO) < 0) {
-            throw new IllegalStateException(
-                    "On-hand quantity cannot become negative"
+        if (quantity.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new IllegalArgumentException(
+                    "Decrease quantity must be greater than zero"
             );
         }
 
-        this.onHandQuantity = newQuantity;
+        BigDecimal availableQuantity =
+                getAvailableQuantity();
+
+        if (availableQuantity.compareTo(quantity) < 0) {
+            throw new IllegalArgumentException(
+                    "Insufficient available stock. " +
+                            "available=" + availableQuantity +
+                            ", requested=" + quantity
+            );
+        }
+
+        this.onHandQuantity =
+                this.onHandQuantity.subtract(quantity);
     }
 
     @Transient
