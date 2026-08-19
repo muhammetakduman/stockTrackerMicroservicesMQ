@@ -80,7 +80,7 @@ public class StockBalance {
                 this.onHandQuantity.add(quantity);
     }
 
-    public void decreaseOnHand(BigDecimal quantity) {
+    public void decreaseOnHandQuantity(BigDecimal quantity) {
         validatePositiveQuantity(quantity);
 
         BigDecimal newQuantity =
@@ -126,4 +126,5 @@ public class StockBalance {
             );
         }
     }
+
 }

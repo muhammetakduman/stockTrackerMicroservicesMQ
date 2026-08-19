@@ -72,6 +72,15 @@ public class StockMovement {
     )
     private StockMovementType movementType;
 
+    /*
+     * Stok hareketinin yönünü gösterir.
+     *
+     * PURCHASE_RECEIPT:
+     * +10
+     *
+     * SALE:
+     * -5
+     */
     @Column(
             name = "quantity_change",
             nullable = false,
@@ -124,6 +133,7 @@ public class StockMovement {
     )
     private Instant createdAt;
 
+
     private StockMovement(
             UUID sourceEventId,
             StockItem stockItem,
@@ -135,6 +145,7 @@ public class StockMovement {
             String referenceId,
             Instant sourceOccurredAt
     ) {
+
         this.sourceEventId = Objects.requireNonNull(
                 sourceEventId,
                 "Source event ID cannot be null"
@@ -150,29 +161,70 @@ public class StockMovement {
                 "Movement type cannot be null"
         );
 
-        validatePositiveQuantity(quantityChange);
+        /*
+         * Burada artık quantityChange'in pozitif olmasını
+         * istemiyoruz.
+         *
+         * Çünkü:
+         *
+         * PURCHASE_RECEIPT = +10
+         * SALE             = -5
+         *
+         * Tek yasak olan değer 0.
+         */
+        validateNonZeroQuantity(
+                quantityChange
+        );
+
         validateNonNegativeQuantity(
                 previousOnHandQuantity,
                 "Previous on-hand quantity"
         );
+
         validateNonNegativeQuantity(
                 newOnHandQuantity,
                 "New on-hand quantity"
         );
-        validateReference(referenceType, referenceId);
+
+        validateReference(
+                referenceType,
+                referenceId
+        );
 
         this.quantityChange = quantityChange;
         this.previousOnHandQuantity = previousOnHandQuantity;
         this.newOnHandQuantity = newOnHandQuantity;
-        this.referenceType = referenceType.trim();
-        this.referenceId = referenceId.trim();
 
-        this.sourceOccurredAt = Objects.requireNonNull(
-                sourceOccurredAt,
-                "Source occurrence time cannot be null"
-        );
+        this.referenceType =
+                referenceType.trim();
+
+        this.referenceId =
+                referenceId.trim();
+
+        this.sourceOccurredAt =
+                Objects.requireNonNull(
+                        sourceOccurredAt,
+                        "Source occurrence time cannot be null"
+                );
     }
 
+
+    // =========================================================
+    // PURCHASE
+    // =========================================================
+
+
+    /*
+     * Purchase sonucu stoğa giriş hareketi oluşturur.
+     *
+     * Örnek:
+     *
+     * previous = 100
+     * received = 20
+     * new      = 120
+     *
+     * quantityChange = +20
+     */
     public static StockMovement purchaseReceipt(
             UUID sourceEventId,
             StockItem stockItem,
@@ -182,12 +234,14 @@ public class StockMovement {
             Long purchaseId,
             Instant sourceOccurredAt
     ) {
+
         Objects.requireNonNull(
                 purchaseId,
                 "Purchase ID cannot be null"
         );
 
         if (purchaseId <= 0) {
+
             throw new IllegalArgumentException(
                     "Purchase ID must be greater than zero"
             );
@@ -203,26 +257,131 @@ public class StockMovement {
                 sourceEventId,
                 stockItem,
                 StockMovementType.PURCHASE_RECEIPT,
+
+                /*
+                 * Purchase bir stok girişidir.
+                 *
+                 * receivedQuantity zaten pozitiftir.
+                 */
                 receivedQuantity,
+
                 previousOnHandQuantity,
                 newOnHandQuantity,
+
                 "PURCHASE",
                 purchaseId.toString(),
+
                 sourceOccurredAt
         );
     }
 
+
+    // =========================================================
+    // SALE
+    // =========================================================
+
+
+    /*
+     * Sale sonucu stoktan çıkış hareketi oluşturur.
+     *
+     * API/event tarafında:
+     *
+     * soldQuantity = 5
+     *
+     * yani pozitif değer taşır.
+     *
+     * Fakat StockMovement tarafında:
+     *
+     * quantityChange = -5
+     *
+     * olarak kaydedilir.
+     */
+    public static StockMovement sale(
+            UUID sourceEventId,
+            StockItem stockItem,
+            BigDecimal soldQuantity,
+            BigDecimal previousOnHandQuantity,
+            BigDecimal newOnHandQuantity,
+            Long saleId,
+            Instant sourceOccurredAt
+    ) {
+
+        Objects.requireNonNull(
+                saleId,
+                "Sale ID cannot be null"
+        );
+
+        if (saleId <= 0) {
+
+            throw new IllegalArgumentException(
+                    "Sale ID must be greater than zero"
+            );
+        }
+
+        validateSaleResult(
+                soldQuantity,
+                previousOnHandQuantity,
+                newOnHandQuantity
+        );
+
+
+        /*
+         * Event:
+         *
+         * soldQuantity = 5
+         *
+         * Movement:
+         *
+         * quantityChange = -5
+         */
+        BigDecimal quantityChange =
+                soldQuantity.negate();
+
+
+        return new StockMovement(
+                sourceEventId,
+                stockItem,
+                StockMovementType.SALE,
+                quantityChange,
+                previousOnHandQuantity,
+                newOnHandQuantity,
+                "SALE",
+                saleId.toString(),
+                sourceOccurredAt
+        );
+    }
+
+
+    // =========================================================
+    // JPA CALLBACK
+    // =========================================================
+
+
     @PrePersist
     protected void onCreate() {
-        this.createdAt = Instant.now();
+
+        this.createdAt =
+                Instant.now();
     }
+
+
+    // =========================================================
+    // PURCHASE VALIDATION
+    // =========================================================
+
 
     private static void validatePurchaseResult(
             BigDecimal receivedQuantity,
             BigDecimal previousOnHandQuantity,
             BigDecimal newOnHandQuantity
     ) {
-        validatePositiveQuantity(receivedQuantity);
+
+        /*
+         * Purchase miktarı mutlaka pozitiftir.
+         */
+        validatePositiveQuantity(
+                receivedQuantity
+        );
 
         validateNonNegativeQuantity(
                 previousOnHandQuantity,
@@ -234,10 +393,17 @@ public class StockMovement {
                 "New on-hand quantity"
         );
 
-        BigDecimal expectedNewQuantity =
-                previousOnHandQuantity.add(receivedQuantity);
 
-        if (expectedNewQuantity.compareTo(newOnHandQuantity) != 0) {
+        BigDecimal expectedNewQuantity =
+                previousOnHandQuantity.add(
+                        receivedQuantity
+                );
+
+
+        if (expectedNewQuantity.compareTo(
+                newOnHandQuantity
+        ) != 0) {
+
             throw new IllegalArgumentException(
                     "New on-hand quantity must equal " +
                             "previous quantity plus received quantity"
@@ -245,50 +411,175 @@ public class StockMovement {
         }
     }
 
+
+    // =========================================================
+    // SALE VALIDATION
+    // =========================================================
+
+
+    private static void validateSaleResult(
+            BigDecimal soldQuantity,
+            BigDecimal previousOnHandQuantity,
+            BigDecimal newOnHandQuantity
+    ) {
+
+        /*
+         * Sale event içerisinde miktar pozitiftir.
+         *
+         * Örneğin:
+         * "5 ürün satıldı."
+         */
+        validatePositiveQuantity(
+                soldQuantity
+        );
+
+        validateNonNegativeQuantity(
+                previousOnHandQuantity,
+                "Previous on-hand quantity"
+        );
+
+        validateNonNegativeQuantity(
+                newOnHandQuantity,
+                "New on-hand quantity"
+        );
+
+
+        BigDecimal expectedNewQuantity =
+                previousOnHandQuantity.subtract(
+                        soldQuantity
+                );
+
+
+        /*
+         * Burada ayrıca şu durum da dolaylı olarak
+         * engellenmiş olur:
+         *
+         * previous = 3
+         * sold     = 5
+         *
+         * expected = -2
+         *
+         * newOnHandQuantity zaten negatif olamayacağı için
+         * işlem geçerli bir movement oluşturamaz.
+         */
+        if (expectedNewQuantity.compareTo(
+                newOnHandQuantity
+        ) != 0) {
+
+            throw new IllegalArgumentException(
+                    "New on-hand quantity must equal " +
+                            "previous quantity minus sold quantity"
+            );
+        }
+    }
+
+
+    // =========================================================
+    // COMMON VALIDATIONS
+    // =========================================================
+
+
+    /*
+     * Business quantity için.
+     *
+     * Purchase receivedQuantity veya
+     * Sale soldQuantity gibi değerler
+     * pozitif olmak zorunda.
+     */
     private static void validatePositiveQuantity(
             BigDecimal quantity
     ) {
+
         if (quantity == null) {
+
             throw new IllegalArgumentException(
                     "Quantity cannot be null"
             );
         }
 
-        if (quantity.compareTo(BigDecimal.ZERO) <= 0) {
+        if (quantity.compareTo(
+                BigDecimal.ZERO
+        ) <= 0) {
+
             throw new IllegalArgumentException(
                     "Quantity must be greater than zero"
             );
         }
     }
 
+
+    /*
+     * StockMovement.quantityChange için.
+     *
+     * Pozitif olabilir:
+     * +10
+     *
+     * Negatif olabilir:
+     * -5
+     *
+     * Ama 0 olamaz.
+     */
+    private static void validateNonZeroQuantity(
+            BigDecimal quantity
+    ) {
+
+        if (quantity == null) {
+
+            throw new IllegalArgumentException(
+                    "Quantity change cannot be null"
+            );
+        }
+
+        if (quantity.compareTo(
+                BigDecimal.ZERO
+        ) == 0) {
+
+            throw new IllegalArgumentException(
+                    "Quantity change cannot be zero"
+            );
+        }
+    }
+
+
     private static void validateNonNegativeQuantity(
             BigDecimal quantity,
             String fieldName
     ) {
+
         if (quantity == null) {
+
             throw new IllegalArgumentException(
                     fieldName + " cannot be null"
             );
         }
 
-        if (quantity.compareTo(BigDecimal.ZERO) < 0) {
+        if (quantity.compareTo(
+                BigDecimal.ZERO
+        ) < 0) {
+
             throw new IllegalArgumentException(
                     fieldName + " cannot be negative"
             );
         }
     }
 
+
     private static void validateReference(
             String referenceType,
             String referenceId
     ) {
-        if (referenceType == null || referenceType.isBlank()) {
+
+        if (referenceType == null ||
+                referenceType.isBlank()) {
+
             throw new IllegalArgumentException(
                     "Reference type cannot be blank"
             );
         }
 
-        if (referenceId == null || referenceId.isBlank()) {
+        if (referenceId == null ||
+                referenceId.isBlank()) {
+
             throw new IllegalArgumentException(
                     "Reference ID cannot be blank"
             );
