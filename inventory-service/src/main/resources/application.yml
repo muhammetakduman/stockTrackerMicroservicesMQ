@@ -84,8 +84,12 @@ app:
 
     stock-result:
       exchange: stock.result.exchange
+
       routing-key: stock.increase.completed
       failed-routing-key: stock.increase.failed
+
+      decrease-routing-key: stock.decrease.completed
+      decrease-failed-routing-key: stock.decrease.failed
 
   outbox:
     publisher:

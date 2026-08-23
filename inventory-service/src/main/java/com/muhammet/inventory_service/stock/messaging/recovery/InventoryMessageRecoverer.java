@@ -17,11 +17,11 @@ import java.util.Objects;
 public class InventoryMessageRecoverer
         implements MessageRecoverer {
 
-    private final PurchaseCreatedMessageRecoverer
-            purchaseCreatedMessageRecoverer;
+    private final PurchaseCreatedMessageRecovererHandler
+            purchaseCreatedMessageRecovererHandler;
 
-    private final SaleCreatedMessageRecoverer
-            saleCreatedMessageRecoverer;
+    private final SaleCreatedMessageRecovererHandler
+            saleCreatedMessageRecovererHandler;
 
     private final PurchaseMessagingProperties
             purchaseProperties;
@@ -47,7 +47,7 @@ public class InventoryMessageRecoverer
                 consumerQueue
         )) {
 
-            purchaseCreatedMessageRecoverer.recover(
+            purchaseCreatedMessageRecovererHandler.recover(
                     message,
                     cause
             );
@@ -61,7 +61,7 @@ public class InventoryMessageRecoverer
                 consumerQueue
         )) {
 
-            saleCreatedMessageRecoverer.recover(
+            saleCreatedMessageRecovererHandler.recover(
                     message,
                     cause
             );
