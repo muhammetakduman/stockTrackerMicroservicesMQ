@@ -116,7 +116,7 @@ public class PurchaseStockService {
          */
         StockBalance stockBalance =
                 stockBalanceRepository
-                        .findByStockItemId(
+                        .findByStockItemIdForUpdate(
                                 event.stockItemId()
                         )
                         .orElseThrow(() ->

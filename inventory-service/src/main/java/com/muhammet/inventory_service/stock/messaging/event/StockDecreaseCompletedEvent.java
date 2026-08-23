@@ -1,6 +1,4 @@
 package com.muhammet.inventory_service.stock.messaging.event;
-import com.muhammet.inventory_service.stock.messaging.event.StockDecreaseCompletedEvent;
-
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.Objects;
