@@ -14,7 +14,7 @@ import tools.jackson.databind.json.JsonMapper;
 @Component
 @RequiredArgsConstructor
 @Slf4j
-public class SaleCreatedMessageRecoverer {
+public class SaleCreatedMessageRecovererHandler {
 
     private static final int MAX_REASON_LENGTH = 500;
 

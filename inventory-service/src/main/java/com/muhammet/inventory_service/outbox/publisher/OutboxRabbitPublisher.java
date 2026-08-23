@@ -71,22 +71,57 @@ public class OutboxRabbitPublisher {
 
         waitForConfirmation(outboxEvent,correlationData);
     }
-
-    private void waitForConfirmation(OutboxEvent outboxEvent, CorrelationData correlationData) {
+    private void waitForConfirmation(
+            OutboxEvent outboxEvent,
+            CorrelationData correlationData
+    ) {
 
         try {
-            CorrelationData.Confirm confirm = correlationData.getFuture().get(
-                    properties.getConfirmTimeoutMs(), TimeUnit.MILLISECONDS
-            );
-            if (!confirm.ack()){
+
+            CorrelationData.Confirm confirm =
+                    correlationData
+                            .getFuture()
+                            .get(
+                                    properties.getConfirmTimeoutMs(),
+                                    TimeUnit.MILLISECONDS
+                            );
+
+
+            /*
+             * Broker mesajı exchange üzerinde kabul etti mi?
+             */
+            if (!confirm.ack()) {
+
                 throw new OutboxPublishException(
                         "RabbitMQ returned NACK. eventId="
-                        + outboxEvent.getEventId()
-                        +", reason"
-                        + confirm.reason()
+                                + outboxEvent.getEventId()
+                                + ", reason="
+                                + confirm.reason()
                 );
             }
-        }catch (InterruptedException exception) {
+
+
+            /*
+             * ACK alınmış olsa bile mesaj hiçbir queue'ya
+             * route edilememiş olabilir.
+             */
+            if (correlationData.getReturned() != null) {
+
+                throw new OutboxPublishException(
+                        "RabbitMQ returned unroutable message. " +
+                                "eventId=" + outboxEvent.getEventId() +
+                                ", exchange=" + outboxEvent.getExchange() +
+                                ", routingKey=" + outboxEvent.getRoutingKey() +
+                                ", replyText=" +
+                                correlationData
+                                        .getReturned()
+                                        .getReplyText()
+                );
+            }
+
+
+        } catch (InterruptedException exception) {
+
             Thread.currentThread().interrupt();
 
             throw new OutboxPublishException(
@@ -95,7 +130,10 @@ public class OutboxRabbitPublisher {
                             + outboxEvent.getEventId(),
                     exception
             );
-        } catch (ExecutionException | TimeoutException exception){
+
+        } catch (ExecutionException |
+                 TimeoutException exception) {
+
             throw new OutboxPublishException(
                     "RabbitMQ confirmation could not be received. "
                             + "eventId="
@@ -104,4 +142,6 @@ public class OutboxRabbitPublisher {
             );
         }
     }
+
+
 }
