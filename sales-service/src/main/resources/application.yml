@@ -67,8 +67,13 @@ app:
       completed-queue: sales.stock-decrease-completed.queue
       failed-queue: sales.stock-decrease-failed.queue
 
+      dead-letter-exchange: sales.stock-result.dlx
+
       completed-dlq: sales.stock-decrease-completed.dlq
       failed-dlq: sales.stock-decrease-failed.dlq
+
+      completed-dead-letter-routing-key: stock.decrease.completed.dead
+      failed-dead-letter-routing-key: stock.decrease.failed.dead
 
 
   outbox:
