@@ -17,9 +17,19 @@ public class StockResultMessagingProperties {
     @NotBlank
     private String exchange;
 
+    // Purchase success
     @NotBlank
     private String routingKey;
 
+    // Purchase failure
     @NotBlank
     private String failedRoutingKey;
+
+    // Sale success
+    @NotBlank
+    private String decreaseRoutingKey;
+
+    // Sale failure
+    @NotBlank
+    private String decreaseFailedRoutingKey;
 }
