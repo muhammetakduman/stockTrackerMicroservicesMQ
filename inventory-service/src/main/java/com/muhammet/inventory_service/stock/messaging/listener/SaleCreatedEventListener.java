@@ -16,8 +16,7 @@ public class SaleCreatedEventListener {
 
     @RabbitListener(
             queues = "${app.messaging.sale.queue}",
-            messageConverter = "jsonMessageConverter"
-    )
+            messageConverter = "jsonMessageConverter")
     public void handle(
             SaleCreatedEvent event
     ) {
@@ -38,8 +37,6 @@ public class SaleCreatedEventListener {
                 event.occurredAt()
         );
 
-        saleStockService.processSale(
-                event
-        );
+        saleStockService.processSale(event);
     }
 }
