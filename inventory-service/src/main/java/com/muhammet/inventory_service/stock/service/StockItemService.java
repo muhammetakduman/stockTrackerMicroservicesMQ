@@ -2,6 +2,7 @@ package com.muhammet.inventory_service.stock.service;
 
 import com.muhammet.inventory_service.stock.dto.CreateStockItemRequest;
 import com.muhammet.inventory_service.stock.dto.StockItemResponse;
+import com.muhammet.inventory_service.stock.dto.UpdateStockItemRequest;
 import com.muhammet.inventory_service.stock.entity.StockBalance;
 import com.muhammet.inventory_service.stock.entity.StockItem;
 import com.muhammet.inventory_service.stock.repository.StockItemRepository;
@@ -154,5 +155,77 @@ public class StockItemService {
         stockItem.setActive(active);
 
         return toResponse(stockItem);
+    }
+    @Transactional
+    public StockItemResponse update(
+            UUID id,
+            UpdateStockItemRequest request
+    ) {
+
+        StockItem stockItem =
+                stockItemRepository.findById(id)
+                        .orElseThrow(() ->
+                                new ResponseStatusException(
+                                        HttpStatus.NOT_FOUND,
+                                        "Stok kalemi bulunamadı: " + id
+                                )
+                        );
+
+
+        if (request.name() == null &&
+                request.description() == null) {
+
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Güncellenecek en az bir alan gönderilmelidir"
+            );
+        }
+
+
+        /*
+         * NAME
+         */
+        if (request.name() != null) {
+
+            String normalizedName =
+                    request.name().trim();
+
+            if (normalizedName.isBlank()) {
+
+                throw new ResponseStatusException(
+                        HttpStatus.BAD_REQUEST,
+                        "Stok kalemi adı boş olamaz"
+                );
+            }
+
+            stockItem.setName(
+                    normalizedName
+            );
+        }
+
+
+        /*
+         * DESCRIPTION
+         */
+        if (request.description() != null) {
+
+            stockItem.setDescription(
+                    normalizeDescription(
+                            request.description()
+                    )
+            );
+        }
+
+
+        /*
+         * save() gerekli değil.
+         *
+         * stockItem managed entity olduğu için Hibernate
+         * transaction commit sırasında dirty checking
+         * ile UPDATE çalıştıracaktır.
+         */
+        return toResponse(
+                stockItem
+        );
     }
 }

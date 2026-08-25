@@ -2,6 +2,7 @@ package com.muhammet.inventory_service.stock.controller;
 
 import com.muhammet.inventory_service.stock.dto.CreateStockItemRequest;
 import com.muhammet.inventory_service.stock.dto.StockItemResponse;
+import com.muhammet.inventory_service.stock.dto.UpdateStockItemRequest;
 import com.muhammet.inventory_service.stock.dto.UpdateStockItemStatusRequest;
 import com.muhammet.inventory_service.stock.enums.StockItemType;
 import com.muhammet.inventory_service.stock.enums.StockUnit;
@@ -230,6 +231,61 @@ public class StockItemController {
                 stockItemService.updateStatus(
                         id,
                         request.active()
+                )
+        );
+    }
+    @PatchMapping("/{id}")
+    @Operation(
+            summary = "Update stock item",
+            description = """
+                Partially updates a stock item's editable information.
+
+                Editable fields:
+                - name
+                - description
+
+                SKU, item type and unit cannot be changed through
+                this endpoint.
+
+                Active status is managed through the dedicated
+                /status endpoint.
+                """
+    )
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Stock item updated successfully"
+            ),
+            @ApiResponse(
+                    responseCode = "400",
+                    description = "Invalid update request"
+            ),
+            @ApiResponse(
+                    responseCode = "401",
+                    description = "Authentication required"
+            ),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "Stock item not found"
+            )
+    })
+    public ResponseEntity<StockItemResponse> update(
+
+            @Parameter(
+                    description = "Unique identifier of the stock item",
+                    required = true
+            )
+            @PathVariable
+            UUID id,
+
+            @RequestBody
+            UpdateStockItemRequest request
+    ) {
+
+        return ResponseEntity.ok(
+                stockItemService.update(
+                        id,
+                        request
                 )
         );
     }
