@@ -118,6 +118,17 @@ public class StockMovement {
             length = 100
     )
     private String referenceId;
+    @Column(
+            name = "reason_code",
+            length = 50
+    )
+    private String reasonCode;
+
+    @Column(
+            name = "note",
+            length = 500
+    )
+    private String note;
 
     @Column(
             name = "source_occurred_at",
@@ -143,7 +154,9 @@ public class StockMovement {
             BigDecimal newOnHandQuantity,
             String referenceType,
             String referenceId,
-            Instant sourceOccurredAt
+            Instant sourceOccurredAt,
+            String reasonCode,
+            String note
     ) {
 
         this.sourceEventId = Objects.requireNonNull(
@@ -201,11 +214,29 @@ public class StockMovement {
         this.referenceId =
                 referenceId.trim();
 
+        this.reasonCode =
+                normalizeOptionalText(reasonCode);
+
+        this.note =
+                normalizeOptionalText(note);
+
         this.sourceOccurredAt =
                 Objects.requireNonNull(
                         sourceOccurredAt,
                         "Source occurrence time cannot be null"
                 );
+    }
+
+    private static String normalizeOptionalText(
+            String value
+    ) {
+
+        if (value == null ||
+                value.isBlank()) {
+            return null;
+        }
+
+        return value.trim();
     }
 
 
@@ -257,21 +288,14 @@ public class StockMovement {
                 sourceEventId,
                 stockItem,
                 StockMovementType.PURCHASE_RECEIPT,
-
-                /*
-                 * Purchase bir stok girişidir.
-                 *
-                 * receivedQuantity zaten pozitiftir.
-                 */
                 receivedQuantity,
-
                 previousOnHandQuantity,
                 newOnHandQuantity,
-
                 "PURCHASE",
                 purchaseId.toString(),
-
-                sourceOccurredAt
+                sourceOccurredAt,
+                null,
+                null
         );
     }
 
@@ -347,7 +371,9 @@ public class StockMovement {
                 newOnHandQuantity,
                 "SALE",
                 saleId.toString(),
-                sourceOccurredAt
+                sourceOccurredAt,
+                null,
+                null
         );
     }
 
@@ -585,4 +611,70 @@ public class StockMovement {
             );
         }
     }
+    // =========================================================
+// ADJUSTMENT
+// =========================================================
+
+    public static StockMovement adjustment(
+            UUID adjustmentId,
+            StockItem stockItem,
+            BigDecimal previousOnHandQuantity,
+            BigDecimal newOnHandQuantity,
+            String reasonCode,
+            String note,
+            Instant sourceOccurredAt
+    ) {
+
+        Objects.requireNonNull(
+                adjustmentId,
+                "Adjustment ID cannot be null"
+        );
+
+        validateNonNegativeQuantity(
+                previousOnHandQuantity,
+                "Previous on-hand quantity"
+        );
+
+        validateNonNegativeQuantity(
+                newOnHandQuantity,
+                "New on-hand quantity"
+        );
+
+        if (reasonCode == null ||
+                reasonCode.isBlank()) {
+
+            throw new IllegalArgumentException(
+                    "Adjustment reason cannot be blank"
+            );
+        }
+
+        BigDecimal quantityChange =
+                newOnHandQuantity.subtract(
+                        previousOnHandQuantity
+                );
+
+        if (quantityChange.compareTo(
+                BigDecimal.ZERO
+        ) == 0) {
+
+            throw new IllegalArgumentException(
+                    "Adjustment must change stock quantity"
+            );
+        }
+
+        return new StockMovement(
+                adjustmentId,
+                stockItem,
+                StockMovementType.ADJUSTMENT,
+                quantityChange,
+                previousOnHandQuantity,
+                newOnHandQuantity,
+                "ADJUSTMENT",
+                adjustmentId.toString(),
+                sourceOccurredAt,
+                reasonCode,
+                note
+        );
+    }
+
 }
