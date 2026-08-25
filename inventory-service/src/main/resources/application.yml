@@ -97,3 +97,12 @@ app:
       batch-size: 20
       max-attempts: 5
       confirm-timeout-ms: 5000
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+
+  swagger-ui:
+    path: /swagger-ui.html
+    operations-sorter: method
+    tags-sorter: alpha
