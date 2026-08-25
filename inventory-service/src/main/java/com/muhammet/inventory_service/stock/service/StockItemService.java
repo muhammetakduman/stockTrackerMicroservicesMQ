@@ -10,6 +10,13 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
+import com.muhammet.inventory_service.stock.enums.StockItemType;
+import com.muhammet.inventory_service.stock.enums.StockUnit;
+import com.muhammet.inventory_service.stock.specification.StockItemSpecification;
+
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
+
 
 import java.util.List;
 import java.util.Locale;
@@ -53,8 +60,40 @@ public class StockItemService {
     }
 
     @Transactional(readOnly = true)
-    public List<StockItemResponse> findAll() {
-        return stockItemRepository.findAllByOrderByNameAsc()
+    public List<StockItemResponse> findAll(
+            Boolean active,
+            StockItemType type,
+            StockUnit unit
+    ) {
+
+        Specification<StockItem> specification =
+                Specification
+                        .where(
+                                StockItemSpecification
+                                        .hasActive(active)
+                        )
+                        .and(
+                                StockItemSpecification
+                                        .hasType(type)
+                        )
+                        .and(
+                                StockItemSpecification
+                                        .hasUnit(unit)
+                        );
+
+
+        Sort sort =
+                Sort.by(
+                        Sort.Direction.ASC,
+                        "name"
+                );
+
+
+        return stockItemRepository
+                .findAll(
+                        specification,
+                        sort
+                )
                 .stream()
                 .map(this::toResponse)
                 .toList();
@@ -96,5 +135,24 @@ public class StockItemService {
         }
 
         return description.trim();
+    }
+    @Transactional
+    public StockItemResponse updateStatus(
+            UUID id,
+            boolean active
+    ) {
+
+        StockItem stockItem =
+                stockItemRepository.findById(id)
+                        .orElseThrow(() ->
+                                new ResponseStatusException(
+                                        HttpStatus.NOT_FOUND,
+                                        "Stok kalemi bulunamadı: " + id
+                                )
+                        );
+
+        stockItem.setActive(active);
+
+        return toResponse(stockItem);
     }
 }

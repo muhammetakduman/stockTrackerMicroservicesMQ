@@ -2,6 +2,9 @@ package com.muhammet.inventory_service.stock.controller;
 
 import com.muhammet.inventory_service.stock.dto.CreateStockItemRequest;
 import com.muhammet.inventory_service.stock.dto.StockItemResponse;
+import com.muhammet.inventory_service.stock.dto.UpdateStockItemStatusRequest;
+import com.muhammet.inventory_service.stock.enums.StockItemType;
+import com.muhammet.inventory_service.stock.enums.StockUnit;
 import com.muhammet.inventory_service.stock.service.StockItemService;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -88,9 +91,15 @@ public class StockItemController {
     @Operation(
             summary = "List stock items",
             description = """
-                    Returns all stock items ordered alphabetically by name.
-                    Stock balance information is included in each response.
-                    """
+                Returns stock items with optional filtering.
+
+                Supported filters:
+                - active
+                - type
+                - unit
+
+                Filters can be used individually or together.
+                """
     )
     @ApiResponses({
             @ApiResponse(
@@ -102,10 +111,33 @@ public class StockItemController {
                     description = "Authentication required"
             )
     })
-    public ResponseEntity<List<StockItemResponse>> findAll() {
+    public ResponseEntity<List<StockItemResponse>> findAll(
+
+            @Parameter(
+                    description = "Filter by active status"
+            )
+            @RequestParam(required = false)
+            Boolean active,
+
+            @Parameter(
+                    description = "Filter by stock item type"
+            )
+            @RequestParam(required = false)
+            StockItemType type,
+
+            @Parameter(
+                    description = "Filter by stock unit"
+            )
+            @RequestParam(required = false)
+            StockUnit unit
+    ) {
 
         return ResponseEntity.ok(
-                stockItemService.findAll()
+                stockItemService.findAll(
+                        active,
+                        type,
+                        unit
+                )
         );
     }
 
@@ -149,6 +181,55 @@ public class StockItemController {
         return ResponseEntity.ok(
                 stockItemService.findById(
                         id
+                )
+        );
+    }
+    @PatchMapping("/{id}/status")
+    @Operation(
+            summary = "Update stock item status",
+            description = """
+                Activates or deactivates a stock item.
+
+                Deactivating a stock item does not delete its
+                historical stock movements, purchases or sales.
+                """
+    )
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Stock item status updated successfully"
+            ),
+            @ApiResponse(
+                    responseCode = "400",
+                    description = "Invalid request"
+            ),
+            @ApiResponse(
+                    responseCode = "401",
+                    description = "Authentication required"
+            ),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "Stock item not found"
+            )
+    })
+    public ResponseEntity<StockItemResponse> updateStatus(
+
+            @Parameter(
+                    description = "Unique identifier of the stock item",
+                    required = true
+            )
+            @PathVariable
+            UUID id,
+
+            @Valid
+            @RequestBody
+            UpdateStockItemStatusRequest request
+    ) {
+
+        return ResponseEntity.ok(
+                stockItemService.updateStatus(
+                        id,
+                        request.active()
                 )
         );
     }
