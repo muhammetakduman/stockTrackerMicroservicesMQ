@@ -11,6 +11,8 @@ import org.springframework.data.jpa.repository.Query;
 
 import org.springframework.data.repository.query.Param;
 
+import java.math.BigDecimal;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -25,6 +27,19 @@ public interface StockBalanceRepository
     Optional<StockBalance> findByStockItemId(
             UUID stockItemId
     );
+
+
+    /*
+     * Tüm stock balance kayıtlarını,
+     * ilişkili StockItem bilgileri ile beraber getirir.
+     */
+    @EntityGraph(attributePaths = "stockItem")
+    @Query("""
+            SELECT sb
+            FROM StockBalance sb
+            ORDER BY sb.stockItem.name ASC
+            """)
+    List<StockBalance> findAllWithStockItem();
 
 
     /*
@@ -43,5 +58,18 @@ public interface StockBalanceRepository
     Optional<StockBalance> findByStockItemIdForUpdate(
             @Param("stockItemId")
             UUID stockItemId
+    );
+
+    @EntityGraph(attributePaths = "stockItem")
+    @Query("""
+        SELECT sb
+        FROM StockBalance sb
+        WHERE sb.stockItem.active = true
+          AND (sb.onHandQuantity - sb.reservedQuantity) <= :threshold
+        ORDER BY (sb.onHandQuantity - sb.reservedQuantity) ASC
+        """)
+    List<StockBalance> findLowStockBalances(
+            @Param("threshold")
+            BigDecimal threshold
     );
 }
