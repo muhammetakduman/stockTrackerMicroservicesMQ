@@ -4,6 +4,7 @@ import com.muhammet.inventory_service.stock.dto.StockBalanceResponse;
 import com.muhammet.inventory_service.stock.service.StockBalanceService;
 
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -13,8 +14,10 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 @RestController
@@ -54,6 +57,48 @@ public class StockBalanceController {
 
         return ResponseEntity.ok(
                 stockBalanceService.findAll()
+        );
+    }
+    @GetMapping("/low-stock")
+    @Operation(
+            summary = "List low stock items",
+            description = """
+                Returns active stock items whose available quantity
+                is less than or equal to the specified threshold.
+
+                Available quantity is calculated as:
+
+                onHandQuantity - reservedQuantity
+                """
+    )
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Low stock balances returned successfully"
+            ),
+            @ApiResponse(
+                    responseCode = "400",
+                    description = "Invalid threshold"
+            ),
+            @ApiResponse(
+                    responseCode = "401",
+                    description = "Authentication required"
+            )
+    })
+    public ResponseEntity<List<StockBalanceResponse>> findLowStock(
+
+            @Parameter(
+                    description = "Maximum available quantity considered low stock",
+                    example = "10"
+            )
+            @RequestParam
+            BigDecimal threshold
+    ) {
+
+        return ResponseEntity.ok(
+                stockBalanceService.findLowStock(
+                        threshold
+                )
         );
     }
 }
