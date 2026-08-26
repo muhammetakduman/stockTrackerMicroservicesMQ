@@ -2,9 +2,7 @@ package com.muhammet.inventory_service.stock.controller;
 
 import com.muhammet.inventory_service.stock.dto.PageResponse;
 import com.muhammet.inventory_service.stock.dto.StockMovementResponse;
-
 import com.muhammet.inventory_service.stock.enums.StockMovementType;
-
 import com.muhammet.inventory_service.stock.service.StockMovementService;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -14,52 +12,50 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 
 import org.springframework.http.ResponseEntity;
-
 import org.springframework.web.bind.annotation.*;
 
 import java.time.Instant;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/v1/stock-movements")
+@RequestMapping(
+        "/api/v1/stock-items/{stockItemId}/movements"
+)
 @RequiredArgsConstructor
 @Tag(
-        name = "Stock Movements",
-        description = "Stock movement history and query operations"
+        name = "Stock Item Movements",
+        description = "Stock movement history for individual stock items"
 )
-public class StockMovementController {
+public class StockItemMovementController {
 
     private final StockMovementService stockMovementService;
 
 
     @GetMapping
     @Operation(
-            summary = "List stock movements",
+            summary = "Get stock item movement history",
             description = """
-                    Returns paginated stock movement history.
+                    Returns paginated movement history for a specific
+                    stock item.
 
-                    Optional filters:
-                    - movement type
-                    - stock item
-                    - occurrence date range
-
-                    Results are ordered by newest movement first.
+                    The history can optionally be filtered by movement
+                    type and occurrence date range.
                     """
     )
     public ResponseEntity<PageResponse<StockMovementResponse>> findAll(
 
             @Parameter(
-                    description = "Filter by movement type"
+                    description = "Unique identifier of the stock item"
             )
-            @RequestParam(required = false)
-            StockMovementType type,
+            @PathVariable
+            UUID stockItemId,
 
 
             @Parameter(
-                    description = "Filter by stock item ID"
+                    description = "Optional movement type"
             )
             @RequestParam(required = false)
-            UUID stockItemId,
+            StockMovementType type,
 
 
             @Parameter(
@@ -78,16 +74,10 @@ public class StockMovementController {
             Instant to,
 
 
-            @Parameter(
-                    description = "Zero-based page number"
-            )
             @RequestParam(defaultValue = "0")
             int page,
 
 
-            @Parameter(
-                    description = "Number of records per page"
-            )
             @RequestParam(defaultValue = "20")
             int size
     ) {
@@ -103,26 +93,4 @@ public class StockMovementController {
                 )
         );
     }
-    @GetMapping("/{id}")
-    @Operation(
-            summary = "Get stock movement by ID",
-            description = """
-                Returns detailed information about a single
-                stock movement.
-                """
-    )
-    public ResponseEntity<StockMovementResponse> findById(
-
-            @Parameter(
-                    description = "Unique identifier of the stock movement"
-            )
-            @PathVariable
-            UUID id
-    ) {
-
-        return ResponseEntity.ok(
-                stockMovementService.findById(id)
-        );
-    }
-
 }

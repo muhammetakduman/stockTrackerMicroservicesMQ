@@ -8,6 +8,7 @@ import com.muhammet.inventory_service.stock.entity.StockMovement;
 
 import com.muhammet.inventory_service.stock.enums.StockMovementType;
 
+import com.muhammet.inventory_service.stock.repository.StockItemRepository;
 import com.muhammet.inventory_service.stock.repository.StockMovementRepository;
 import com.muhammet.inventory_service.stock.specification.StockMovementSpecification;
 
@@ -34,6 +35,7 @@ import java.util.UUID;
 public class StockMovementService {
 
     private final StockMovementRepository stockMovementRepository;
+    private final StockItemRepository stockItemRepository;
 
 
     @Transactional(readOnly = true)
@@ -181,5 +183,48 @@ public class StockMovementService {
                     "From tarihi to tarihinden sonra olamaz"
             );
         }
+    }
+    @Transactional(readOnly = true)
+    public StockMovementResponse findById(
+            UUID id
+    ) {
+
+        StockMovement movement =
+                stockMovementRepository.findById(id)
+                        .orElseThrow(() ->
+                                new ResponseStatusException(
+                                        HttpStatus.NOT_FOUND,
+                                        "Stok hareketi bulunamadı: " + id
+                                )
+                        );
+
+        return toResponse(movement);
+    }
+    @Transactional(readOnly = true)
+    public PageResponse<StockMovementResponse> findByStockItem(
+            UUID stockItemId,
+            StockMovementType type,
+            Instant from,
+            Instant to,
+            int page,
+            int size
+    ) {
+
+        if (!stockItemRepository.existsById(stockItemId)) {
+
+            throw new ResponseStatusException(
+                    HttpStatus.NOT_FOUND,
+                    "Stok kalemi bulunamadı: " + stockItemId
+            );
+        }
+
+        return findAll(
+                type,
+                stockItemId,
+                from,
+                to,
+                page,
+                size
+        );
     }
 }
