@@ -33,7 +33,10 @@ public class SecurityConfig {
                                  * Health check JWT istemesin.
                                  */
                                 .requestMatchers(
-                                        "/actuator/health"
+                                        "/actuator/health",
+                                        "/swagger-ui.html",
+                                        "/swagger-ui/**",
+                                        "/v3/api-docs/**"
                                 )
                                 .permitAll()
 
