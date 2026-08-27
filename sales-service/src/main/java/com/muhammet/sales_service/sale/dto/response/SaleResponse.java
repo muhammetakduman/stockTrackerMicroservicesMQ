@@ -1,4 +1,4 @@
-package com.muhammet.sales_service.sale.dto.request;
+package com.muhammet.sales_service.sale.dto.response;
 
 
 import com.muhammet.sales_service.sale.domain.Sale;
