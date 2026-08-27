@@ -1,5 +1,8 @@
 package com.muhammet.purchase_service.purchase.service;
 
+import com.muhammet.purchase_service.outbox.entity.OutboxEvent;
+import com.muhammet.purchase_service.outbox.enums.OutboxStatus;
+import com.muhammet.purchase_service.outbox.repository.OutboxEventRepository;
 import com.muhammet.purchase_service.outbox.service.PurchaseOutboxService;
 import com.muhammet.purchase_service.purchase.domain.Purchase;
 import com.muhammet.purchase_service.purchase.domain.PurchaseStatus;
@@ -35,6 +38,11 @@ import java.util.Objects;
 @RequiredArgsConstructor
 @Slf4j
 public class PurchaseService {
+    private static final String PURCHASE_AGGREGATE_TYPE =
+            "PURCHASE";
+
+    private static final String PURCHASE_CREATED_EVENT_TYPE =
+            "purchase.created";
 
     private static final String STOCK_COMPLETED_EVENT_TYPE =
             "stock.increase.completed";
@@ -60,6 +68,7 @@ public class PurchaseService {
      * PurchaseCreatedEvent artık doğrudan RabbitMQ'ya gönderilmiyor.
      * Aynı transaction içerisinde outbox_events tablosuna yazılıyor.
      */
+    private final OutboxEventRepository outboxEventRepository;
     private final PurchaseOutboxService purchaseOutboxService;
     private final ProcessedEventService processedEventService;
 
@@ -633,5 +642,149 @@ public class PurchaseService {
                     "From tarihi to tarihinden sonra olamaz"
             );
         }
+    }
+    @Transactional
+    public PurchaseResponse cancelPurchase(
+            Long purchaseId
+    ) {
+
+        if (purchaseId == null ||
+                purchaseId <= 0) {
+
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Purchase ID must be greater than zero"
+            );
+        }
+
+
+        /*
+         * Purchase satırını lock ediyoruz.
+         */
+        Purchase purchase =
+                purchaseRepository
+                        .findByIdForUpdate(purchaseId)
+                        .orElseThrow(() ->
+                                new PurchaseNotFoundException(
+                                        purchaseId
+                                )
+                        );
+
+
+        /*
+         * Idempotency:
+         *
+         * Frontend aynı cancel request'ini ikinci kez
+         * gönderirse tekrar hata üretmiyoruz.
+         */
+        if (purchase.getStatus() ==
+                PurchaseStatus.CANCELLED) {
+
+            return PurchaseResponse.from(
+                    purchase
+            );
+        }
+
+
+        /*
+         * Basit cancellation yalnızca henüz
+         * stock update tamamlanmamış purchase için.
+         */
+        if (purchase.getStatus() !=
+                PurchaseStatus.PENDING_STOCK_UPDATE) {
+
+            throw new ResponseStatusException(
+                    HttpStatus.CONFLICT,
+                    "Purchase cannot be cancelled from status: "
+                            + purchase.getStatus()
+            );
+        }
+
+
+        /*
+         * Purchase oluşturulurken yazılan
+         * purchase.created outbox eventini buluyoruz
+         * ve aynı satırı WRITE lock altına alıyoruz.
+         */
+        OutboxEvent outboxEvent =
+                outboxEventRepository
+                        .findByAggregateForUpdate(
+                                PURCHASE_AGGREGATE_TYPE,
+                                purchaseId.toString(),
+                                PURCHASE_CREATED_EVENT_TYPE
+                        )
+                        .orElseThrow(() ->
+                                new IllegalStateException(
+                                        "Purchase created outbox event not found. " +
+                                                "purchaseId=" + purchaseId
+                                )
+                        );
+
+
+        /*
+         * Event artık PENDING değilse publish süreci
+         * başlamış veya tamamlanmış demektir.
+         */
+        if (outboxEvent.getStatus() !=
+                OutboxStatus.PENDING) {
+
+            throw new ResponseStatusException(
+                    HttpStatus.CONFLICT,
+                    "Purchase cannot be cancelled because " +
+                            "stock processing has already started. " +
+                            "Outbox status: "
+                            + outboxEvent.getStatus()
+            );
+        }
+
+
+        /*
+         * PENDING olması tek başına yeterli değil.
+         *
+         * Timeout/NACK sonrası event tekrar PENDING
+         * olabilir.
+         */
+        if (outboxEvent.getAttemptCount() > 0) {
+
+            throw new ResponseStatusException(
+                    HttpStatus.CONFLICT,
+                    "Purchase cannot be cancelled because " +
+                            "publishing has already been attempted"
+            );
+        }
+
+
+        if (outboxEvent.getPublishedAt() != null) {
+
+            throw new ResponseStatusException(
+                    HttpStatus.CONFLICT,
+                    "Purchase cannot be cancelled because " +
+                            "its event has already been published"
+            );
+        }
+
+
+        /*
+         * İkisi aynı transaction içerisinde.
+         *
+         * Herhangi biri başarısız olursa ikisi de rollback.
+         */
+        outboxEvent.cancelBeforePublishing();
+
+        purchase.cancelBeforeStockUpdate();
+
+
+        log.info(
+                "Purchase cancelled before stock update. " +
+                        "purchaseId={}, outboxId={}, eventId={}",
+                purchase.getId(),
+                outboxEvent.getId(),
+                outboxEvent.getEventId()
+        );
+
+
+        return PurchaseResponse.from(
+                purchase
+        );
     }
 }

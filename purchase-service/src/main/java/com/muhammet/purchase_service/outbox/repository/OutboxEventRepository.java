@@ -35,4 +35,24 @@ public interface OutboxEventRepository
     Optional<OutboxEvent> findByIdForUpdate(
             @Param("id") UUID id
     );
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("""
+        SELECT oe
+        FROM OutboxEvent oe
+        WHERE oe.aggregateType = :aggregateType
+          AND oe.aggregateId = :aggregateId
+          AND oe.eventType = :eventType
+        """)
+    Optional<OutboxEvent> findByAggregateForUpdate(
+            @Param("aggregateType")
+            String aggregateType,
+
+            @Param("aggregateId")
+            String aggregateId,
+
+            @Param("eventType")
+            String eventType
+    );
+
 }

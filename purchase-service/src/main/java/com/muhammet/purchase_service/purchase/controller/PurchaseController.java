@@ -6,6 +6,8 @@ import com.muhammet.purchase_service.purchase.dto.response.PageResponse;
 import com.muhammet.purchase_service.purchase.dto.response.PurchaseResponse;
 import com.muhammet.purchase_service.purchase.service.PurchaseService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -108,6 +110,48 @@ public class PurchaseController {
                         to,
                         page,
                         size
+                )
+        );
+    }
+    @PostMapping("/{id}/cancel")
+    @Operation(
+            summary = "Cancel pending purchase",
+            description = """
+                Cancels a purchase only if its stock update
+                process has not started yet.
+
+                The related purchase.created outbox event is
+                cancelled in the same transaction.
+
+                Completed or already-published purchases cannot
+                be cancelled using this endpoint.
+                """
+    )
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Purchase cancelled successfully"
+            ),
+            @ApiResponse(
+                    responseCode = "401",
+                    description = "Authentication required"
+            ),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "Purchase not found"
+            ),
+            @ApiResponse(
+                    responseCode = "409",
+                    description = "Purchase can no longer be safely cancelled"
+            )
+    })
+    public ResponseEntity<PurchaseResponse> cancelPurchase(
+            @PathVariable Long id
+    ) {
+
+        return ResponseEntity.ok(
+                purchaseService.cancelPurchase(
+                        id
                 )
         );
     }

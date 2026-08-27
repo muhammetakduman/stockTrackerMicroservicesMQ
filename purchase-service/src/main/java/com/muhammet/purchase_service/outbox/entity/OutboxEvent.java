@@ -236,6 +236,37 @@ public class OutboxEvent {
         this.publishedAt = Instant.now();
         this.lastError = null;
     }
+    public void cancelBeforePublishing() {
+
+        if (this.status == OutboxStatus.CANCELLED) {
+            return;
+        }
+
+        if (this.status != OutboxStatus.PENDING) {
+            throw new IllegalStateException(
+                    "Only pending outbox event can be cancelled. " +
+                            "Current status: " + this.status
+            );
+        }
+
+        /*
+         * Bir publish denemesi bile yapıldıysa güvenli şekilde
+         * "mesaj kesin RabbitMQ'ya gitmedi" diyemeyiz.
+         */
+        if (this.attemptCount > 0) {
+            throw new IllegalStateException(
+                    "Outbox event cannot be cancelled after a publish attempt"
+            );
+        }
+
+        if (this.publishedAt != null) {
+            throw new IllegalStateException(
+                    "Published outbox event cannot be cancelled"
+            );
+        }
+
+        this.status = OutboxStatus.CANCELLED;
+    }
 
     public void registerFailure(
             String errorMessage,
