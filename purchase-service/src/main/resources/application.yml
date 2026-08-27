@@ -97,3 +97,12 @@ app:
 
       failed-dead-letter-queue: purchase.stock-increase-failed.dlq
       failed-dead-letter-routing-key: stock.increase.failed.dead
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+
+  swagger-ui:
+    path: /swagger-ui.html
+    operations-sorter: method
+    tags-sorter: alpha

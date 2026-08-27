@@ -4,6 +4,7 @@ import com.muhammet.purchase_service.outbox.service.PurchaseOutboxService;
 import com.muhammet.purchase_service.purchase.domain.Purchase;
 import com.muhammet.purchase_service.purchase.domain.PurchaseStatus;
 import com.muhammet.purchase_service.purchase.dto.request.CreatePurchaseRequest;
+import com.muhammet.purchase_service.purchase.dto.response.PageResponse;
 import com.muhammet.purchase_service.purchase.dto.response.PurchaseResponse;
 import com.muhammet.purchase_service.purchase.exception.PurchaseNotFoundException;
 import com.muhammet.purchase_service.purchase.messaging.event.PurchaseCreatedEvent;
@@ -13,8 +14,19 @@ import com.muhammet.purchase_service.purchase.repository.PurchaseRepository;
 import com.muhammet.purchase_service.inbox.service.ProcessedEventService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.muhammet.purchase_service.purchase.specification.PurchaseSpecification;
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
+import org.springframework.web.server.ResponseStatusException;
+
+import java.time.Instant;
+import java.util.UUID;
 
 import java.math.BigDecimal;
 import java.util.Objects;
@@ -501,5 +513,125 @@ public class PurchaseService {
         }
 
         return reason;
+    }
+    @Transactional(readOnly = true)
+    public PageResponse<PurchaseResponse> findAll(
+            PurchaseStatus status,
+            UUID stockItemId,
+            String supplierName,
+            Instant from,
+            Instant to,
+            int page,
+            int size
+    ) {
+
+        validatePagination(
+                page,
+                size
+        );
+
+        validateDateRange(
+                from,
+                to
+        );
+
+
+        Specification<Purchase> specification =
+                PurchaseSpecification
+                        .hasStatus(status)
+                        .and(
+                                PurchaseSpecification
+                                        .hasStockItemId(stockItemId)
+                        )
+                        .and(
+                                PurchaseSpecification
+                                        .hasSupplierName(supplierName)
+                        )
+                        .and(
+                                PurchaseSpecification
+                                        .purchasedFrom(from)
+                        )
+                        .and(
+                                PurchaseSpecification
+                                        .purchasedTo(to)
+                        );
+
+
+        PageRequest pageable =
+                PageRequest.of(
+                        page,
+                        size,
+                        Sort.by(
+                                Sort.Direction.DESC,
+                                "purchasedAt"
+                        ).and(
+                                Sort.by(
+                                        Sort.Direction.DESC,
+                                        "id"
+                                )
+                        )
+                );
+
+
+        Page<Purchase> result =
+                purchaseRepository.findAll(
+                        specification,
+                        pageable
+                );
+
+
+        return new PageResponse<>(
+                result.getContent()
+                        .stream()
+                        .map(PurchaseResponse::from)
+                        .toList(),
+
+                result.getNumber(),
+                result.getSize(),
+
+                result.getTotalElements(),
+                result.getTotalPages(),
+
+                result.isFirst(),
+                result.isLast()
+        );
+    }
+    private void validatePagination(
+            int page,
+            int size
+    ) {
+
+        if (page < 0) {
+
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Page değeri negatif olamaz"
+            );
+        }
+
+        if (size < 1 || size > 100) {
+
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Size değeri 1 ile 100 arasında olmalıdır"
+            );
+        }
+    }
+
+
+    private void validateDateRange(
+            Instant from,
+            Instant to
+    ) {
+
+        if (from != null &&
+                to != null &&
+                from.isAfter(to)) {
+
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "From tarihi to tarihinden sonra olamaz"
+            );
+        }
     }
 }
