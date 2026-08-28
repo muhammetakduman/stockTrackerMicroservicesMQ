@@ -15,6 +15,7 @@ import lombok.RequiredArgsConstructor;
 
 import org.springframework.http.ResponseEntity;
 
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.Instant;
@@ -33,6 +34,13 @@ public class StockMovementController {
 
 
     @GetMapping
+    @PreAuthorize("""
+        hasAnyRole(
+            'ADMIN',
+            'STOCK_MANAGER',
+            'PRODUCTION_USER'
+        )
+        """)
     @Operation(
             summary = "List stock movements",
             description = """
@@ -104,6 +112,13 @@ public class StockMovementController {
         );
     }
     @GetMapping("/{id}")
+    @PreAuthorize("""
+        hasAnyRole(
+            'ADMIN',
+            'STOCK_MANAGER',
+            'PRODUCTION_USER'
+        )
+        """)
     @Operation(
             summary = "Get stock movement by ID",
             description = """
