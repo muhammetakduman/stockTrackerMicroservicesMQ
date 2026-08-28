@@ -12,6 +12,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.UUID;
@@ -31,6 +32,7 @@ public class StockAdjustmentController {
 
 
     @PostMapping
+    @PreAuthorize("hasAnyRole('ADMIN', 'STOCK_MANAGER')")
     @Operation(
             summary = "Adjust stock quantity",
             description = """
