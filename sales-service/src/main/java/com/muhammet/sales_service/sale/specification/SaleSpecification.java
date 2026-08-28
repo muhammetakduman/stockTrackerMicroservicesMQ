@@ -33,7 +33,7 @@ public final class SaleSpecification {
 
 
     public static Specification<Sale> hasSellerId(
-            Long sellerId
+            UUID sellerId
     ) {
 
         return (root, query, cb) -> {

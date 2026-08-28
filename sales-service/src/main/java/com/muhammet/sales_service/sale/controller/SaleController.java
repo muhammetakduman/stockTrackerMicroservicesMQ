@@ -4,12 +4,14 @@ import com.muhammet.sales_service.sale.domain.SaleStatus;
 import com.muhammet.sales_service.sale.dto.request.CreateSaleRequest;
 import com.muhammet.sales_service.sale.dto.response.PageResponse;
 import com.muhammet.sales_service.sale.dto.response.SaleResponse;
+import com.muhammet.sales_service.sale.security.AuthenticatedSeller;
 import com.muhammet.sales_service.sale.service.SaleService;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 
 import jakarta.validation.Valid;
@@ -18,7 +20,7 @@ import lombok.RequiredArgsConstructor;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.Instant;
@@ -34,6 +36,7 @@ import java.util.UUID;
 public class SaleController {
 
     private final SaleService saleService;
+    private final AuthenticatedSeller authenticatedSeller;
 
 
     // =========================================================
@@ -42,15 +45,20 @@ public class SaleController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
+    @PreAuthorize("hasAnyRole('SALES_USER', 'ADMIN')")
     @Operation(
             summary = "Create sale",
             description = """
                     Creates a sale in PENDING_STOCK_UPDATE status.
 
+                    sellerId is resolved automatically from the JWT subject claim.
+                    Do NOT send sellerId in the request body.
+
                     The sale.created event is stored in the
                     transactional outbox and inventory processing
                     continues asynchronously.
-                    """
+                    """,
+            security = @SecurityRequirement(name = "bearerAuth")
     )
     @ApiResponses({
             @ApiResponse(
@@ -71,9 +79,92 @@ public class SaleController {
             @RequestBody
             CreateSaleRequest request
     ) {
+        UUID sellerId = authenticatedSeller.getCurrentSellerId();
 
         return saleService.createSale(
+                sellerId,
                 request
+        );
+    }
+
+
+    // =========================================================
+    // MY SALES — current authenticated user's sales
+    // =========================================================
+
+    @GetMapping("/my")
+    @PreAuthorize("hasAnyRole('SALES_USER', 'ADMIN')")
+    @Operation(
+            summary = "Get my sales",
+            description = """
+                    Returns paginated sales belonging to the currently
+                    authenticated user. sellerId is resolved from the JWT.
+
+                    Optional filters:
+                    - status
+                    - stockItemId
+                    - soldAt date range
+                    """,
+            security = @SecurityRequirement(name = "bearerAuth")
+    )
+    @ApiResponses({
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Sales returned successfully"
+            ),
+            @ApiResponse(
+                    responseCode = "400",
+                    description = "Invalid filter or pagination value"
+            ),
+            @ApiResponse(
+                    responseCode = "401",
+                    description = "Authentication required"
+            )
+    })
+    public ResponseEntity<PageResponse<SaleResponse>> findMySales(
+
+            @Parameter(description = "Filter by sale status")
+            @RequestParam(required = false)
+            SaleStatus status,
+
+            @Parameter(description = "Filter by stock item ID")
+            @RequestParam(required = false)
+            UUID stockItemId,
+
+            @Parameter(
+                    description = "Beginning of soldAt date range",
+                    example = "2026-08-01T00:00:00Z"
+            )
+            @RequestParam(required = false)
+            Instant from,
+
+            @Parameter(
+                    description = "End of soldAt date range",
+                    example = "2026-08-31T23:59:59Z"
+            )
+            @RequestParam(required = false)
+            Instant to,
+
+            @Parameter(description = "Zero-based page number", example = "0")
+            @RequestParam(defaultValue = "0")
+            int page,
+
+            @Parameter(description = "Number of records per page", example = "20")
+            @RequestParam(defaultValue = "20")
+            int size
+    ) {
+        UUID sellerId = authenticatedSeller.getCurrentSellerId();
+
+        return ResponseEntity.ok(
+                saleService.findAll(
+                        status,
+                        sellerId,
+                        stockItemId,
+                        from,
+                        to,
+                        page,
+                        size
+                )
         );
     }
 
@@ -83,6 +174,7 @@ public class SaleController {
     // =========================================================
 
     @GetMapping
+    @PreAuthorize("hasRole('ADMIN')")
     @Operation(
             summary = "List sales",
             description = """
@@ -90,10 +182,11 @@ public class SaleController {
 
                     Optional filters:
                     - status
-                    - sellerId
+                    - sellerId (UUID)
                     - stockItemId
                     - soldAt date range
-                    """
+                    """,
+            security = @SecurityRequirement(name = "bearerAuth")
     )
     @ApiResponses({
             @ApiResponse(
@@ -111,26 +204,17 @@ public class SaleController {
     })
     public ResponseEntity<PageResponse<SaleResponse>> findAll(
 
-            @Parameter(
-                    description = "Filter by sale status"
-            )
+            @Parameter(description = "Filter by sale status")
             @RequestParam(required = false)
             SaleStatus status,
 
-
-            @Parameter(
-                    description = "Filter by seller ID"
-            )
+            @Parameter(description = "Filter by seller UUID")
             @RequestParam(required = false)
-            Long sellerId,
+            UUID sellerId,
 
-
-            @Parameter(
-                    description = "Filter by stock item ID"
-            )
+            @Parameter(description = "Filter by stock item ID")
             @RequestParam(required = false)
             UUID stockItemId,
-
 
             @Parameter(
                     description = "Beginning of soldAt date range",
@@ -139,7 +223,6 @@ public class SaleController {
             @RequestParam(required = false)
             Instant from,
 
-
             @Parameter(
                     description = "End of soldAt date range",
                     example = "2026-08-31T23:59:59Z"
@@ -147,19 +230,11 @@ public class SaleController {
             @RequestParam(required = false)
             Instant to,
 
-
-            @Parameter(
-                    description = "Zero-based page number",
-                    example = "0"
-            )
+            @Parameter(description = "Zero-based page number", example = "0")
             @RequestParam(defaultValue = "0")
             int page,
 
-
-            @Parameter(
-                    description = "Number of records per page",
-                    example = "20"
-            )
+            @Parameter(description = "Number of records per page", example = "20")
             @RequestParam(defaultValue = "20")
             int size
     ) {
@@ -183,12 +258,14 @@ public class SaleController {
     // =========================================================
 
     @GetMapping("/{id}")
+    @PreAuthorize("hasAnyRole('SALES_USER', 'ADMIN')")
     @Operation(
             summary = "Get sale by ID",
             description = """
                     Returns detailed information about
                     a single sale.
-                    """
+                    """,
+            security = @SecurityRequirement(name = "bearerAuth")
     )
     @ApiResponses({
             @ApiResponse(
@@ -217,11 +294,29 @@ public class SaleController {
             @PathVariable
             Long id
     ) {
+        UUID currentSellerId = authenticatedSeller.getCurrentSellerId();
+        boolean isAdmin = isAdmin();
 
         return ResponseEntity.ok(
                 saleService.findById(
-                        id
+                        id,
+                        currentSellerId,
+                        isAdmin
                 )
         );
     }
+
+    /**
+     * SecurityContext'te "ROLE_ADMIN" authority var mı kontrol eder.
+     * JwtAuthenticationConverter'ın "roles" claim'ini "ROLE_" prefix ile map ettiği varsayımına dayanır.
+     */
+    private boolean isAdmin() {
+        return org.springframework.security.core.context.SecurityContextHolder
+                .getContext()
+                .getAuthentication()
+                .getAuthorities()
+                .stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
+    }
 }
+

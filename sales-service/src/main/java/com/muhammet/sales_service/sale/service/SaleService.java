@@ -43,8 +43,14 @@ public class SaleService {
 
     @Transactional
     public SaleResponse createSale(
+            UUID sellerId,
             CreateSaleRequest request
     ) {
+
+        Objects.requireNonNull(
+                sellerId,
+                "Seller ID cannot be null"
+        );
 
         Objects.requireNonNull(
                 request,
@@ -57,7 +63,7 @@ public class SaleService {
          */
         Sale sale =
                 Sale.create(
-                        request.sellerId(),
+                        sellerId,
                         request.stockItemId(),
                         request.quantity(),
                         request.unitPrice(),
@@ -116,7 +122,7 @@ public class SaleService {
     @Transactional(readOnly = true)
     public PageResponse<SaleResponse> findAll(
             SaleStatus status,
-            Long sellerId,
+            UUID sellerId,
             UUID stockItemId,
             Instant from,
             Instant to,
@@ -237,7 +243,9 @@ public class SaleService {
     }
     @Transactional(readOnly = true)
     public SaleResponse findById(
-            Long saleId
+            Long saleId,
+            UUID currentSellerId,
+            boolean isAdmin
     ) {
 
         if (saleId == null ||
@@ -261,6 +269,16 @@ public class SaleService {
                                 )
                         );
 
+        /*
+         * SALES_USER yalnızca kendi satışını görebilir.
+         * ADMIN her satışı görebilir.
+         */
+        if (!isAdmin && !sale.getSellerId().equals(currentSellerId)) {
+            throw new ResponseStatusException(
+                    HttpStatus.FORBIDDEN,
+                    "Access denied: this sale belongs to another seller"
+            );
+        }
 
         return SaleResponse.from(
                 sale

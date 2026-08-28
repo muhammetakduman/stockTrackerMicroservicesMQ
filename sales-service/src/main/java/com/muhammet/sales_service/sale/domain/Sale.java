@@ -41,9 +41,10 @@ public class Sale {
 
     @Column(
             name = "seller_id",
-            nullable = false
+            nullable = false,
+            columnDefinition = "uuid"
     )
-    private Long sellerId;
+    private UUID sellerId;
 
     @Column(
             name = "stock_item_id",
@@ -110,7 +111,7 @@ public class Sale {
 
 
     private Sale(
-            Long sellerId,
+            UUID sellerId,
             UUID stockItemId,
             BigDecimal quantity,
             BigDecimal unitPrice,
@@ -146,7 +147,7 @@ public class Sale {
 
 
     public static Sale create(
-            Long sellerId,
+            UUID sellerId,
             UUID stockItemId,
             BigDecimal quantity,
             BigDecimal unitPrice,
@@ -240,14 +241,13 @@ public class Sale {
 
 
     private static void validateSellerId(
-            Long sellerId
+            UUID sellerId
     ) {
 
-        if (sellerId == null ||
-                sellerId <= 0) {
+        if (sellerId == null) {
 
             throw new IllegalArgumentException(
-                    "Seller ID must be greater than zero"
+                    "Seller ID cannot be null"
             );
         }
     }

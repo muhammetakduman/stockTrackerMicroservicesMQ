@@ -16,7 +16,7 @@ public record SaleCreatedEvent(
 
         Long saleId,
 
-        Long sellerId,
+        UUID sellerId,
 
         UUID stockItemId,
 
@@ -73,12 +73,6 @@ public record SaleCreatedEvent(
                 "Seller ID cannot be null"
         );
 
-        if (sellerId <= 0) {
-
-            throw new IllegalArgumentException(
-                    "Seller ID must be greater than zero"
-            );
-        }
 
         Objects.requireNonNull(
                 stockItemId,

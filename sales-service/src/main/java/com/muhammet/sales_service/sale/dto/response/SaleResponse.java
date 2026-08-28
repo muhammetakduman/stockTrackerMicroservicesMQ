@@ -12,7 +12,7 @@ public record SaleResponse(
 
         Long id,
 
-        Long sellerId,
+        UUID sellerId,
 
         UUID stockItemId,
 
