@@ -20,6 +20,7 @@ import lombok.RequiredArgsConstructor;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -42,6 +43,7 @@ public class StockItemController {
     // =========================================================
 
     @PostMapping
+    @PreAuthorize("hasAnyRole('ADMIN') or hasRole('STOCK_MANAGER')")
     @Operation(
             summary = "Create a stock item",
             description = """
@@ -89,6 +91,14 @@ public class StockItemController {
     // =========================================================
 
     @GetMapping
+    @PreAuthorize("""
+        hasAnyRole(
+            'ADMIN',
+            'STOCK_MANAGER',
+            'SALES_USER',
+            'PRODUCTION_USER'
+        )
+        """)
     @Operation(
             summary = "List stock items",
             description = """
@@ -148,6 +158,14 @@ public class StockItemController {
     // =========================================================
 
     @GetMapping("/{id}")
+    @PreAuthorize("""
+        hasAnyRole(
+            'ADMIN',
+            'STOCK_MANAGER',
+            'SALES_USER',
+            'PRODUCTION_USER'
+        )
+        """)
     @Operation(
             summary = "Get stock item by ID",
             description = """
@@ -186,6 +204,7 @@ public class StockItemController {
         );
     }
     @PatchMapping("/{id}/status")
+    @PreAuthorize("hasAnyRole('ADMIN', 'STOCK_MANAGER')")
     @Operation(
             summary = "Update stock item status",
             description = """
@@ -235,6 +254,7 @@ public class StockItemController {
         );
     }
     @PatchMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'STOCK_MANAGER')")
     @Operation(
             summary = "Update stock item",
             description = """
