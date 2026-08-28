@@ -350,11 +350,6 @@ public class SaleStockService {
         }
 
 
-        if (event.sellerId() <= 0) {
-            throw new IllegalArgumentException(
-                    "Seller ID must be greater than zero"
-            );
-        }
 
 
         if (event.quantity()

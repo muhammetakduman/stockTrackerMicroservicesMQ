@@ -14,7 +14,7 @@ public record SaleCreatedEvent(
 
         Long saleId,
 
-        Long sellerId,
+        UUID sellerId,
 
         UUID stockItemId,
 
