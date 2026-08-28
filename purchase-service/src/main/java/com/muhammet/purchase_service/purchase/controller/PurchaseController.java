@@ -12,6 +12,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
@@ -40,6 +41,7 @@ public class PurchaseController {
                 """
     )
     @PostMapping
+    @PreAuthorize("hasAnyRole('ADMIN', 'STOCK_MANAGER')")
     public ResponseEntity<PurchaseResponse> createPurchase(@Valid @RequestBody CreatePurchaseRequest request){
         PurchaseResponse response = purchaseService.createPurchase(request);
         URI location = ServletUriComponentsBuilder
@@ -57,6 +59,7 @@ public class PurchaseController {
             description = "Returns the details of a single purchase."
     )
     @GetMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'STOCK_MANAGER')")
     public  ResponseEntity<PurchaseResponse> getPurchaseById(
             @PathVariable Long id
     ){
@@ -77,6 +80,7 @@ public class PurchaseController {
                 """
     )
     @GetMapping
+    @PreAuthorize("hasAnyRole('ADMIN', 'STOCK_MANAGER')")
     public ResponseEntity<PageResponse<PurchaseResponse>> findAll(
 
             @RequestParam(required = false)
@@ -114,6 +118,7 @@ public class PurchaseController {
         );
     }
     @PostMapping("/{id}/cancel")
+    @PreAuthorize("hasAnyRole('ADMIN', 'STOCK_MANAGER')")
     @Operation(
             summary = "Cancel pending purchase",
             description = """
