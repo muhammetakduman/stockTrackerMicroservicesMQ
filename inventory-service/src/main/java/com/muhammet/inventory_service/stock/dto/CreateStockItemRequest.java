@@ -1,5 +1,6 @@
 package com.muhammet.inventory_service.stock.dto;
 
+import com.muhammet.inventory_service.stock.enums.PackagingKind;
 import com.muhammet.inventory_service.stock.enums.StockItemType;
 import com.muhammet.inventory_service.stock.enums.StockUnit;
 import jakarta.validation.constraints.NotBlank;
@@ -22,7 +23,13 @@ public record CreateStockItemRequest(
         StockItemType itemType,
 
         @NotNull(message = "Stok birimi belirtilmelidir")
-        StockUnit unit
+        StockUnit unit,
+
+        /**
+         * Yalnızca itemType = PACKAGING için zorunludur.
+         * Diğer tipler için null olmalıdır.
+         */
+        PackagingKind packagingKind
 
 ){
 

@@ -5,18 +5,18 @@ import com.muhammet.inventory_service.stock.dto.StockItemResponse;
 import com.muhammet.inventory_service.stock.dto.UpdateStockItemRequest;
 import com.muhammet.inventory_service.stock.entity.StockBalance;
 import com.muhammet.inventory_service.stock.entity.StockItem;
+import com.muhammet.inventory_service.stock.enums.PackagingKind;
+import com.muhammet.inventory_service.stock.enums.StockItemType;
+import com.muhammet.inventory_service.stock.enums.StockUnit;
 import com.muhammet.inventory_service.stock.repository.StockItemRepository;
+import com.muhammet.inventory_service.stock.specification.StockItemSpecification;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
-import com.muhammet.inventory_service.stock.enums.StockItemType;
-import com.muhammet.inventory_service.stock.enums.StockUnit;
-import com.muhammet.inventory_service.stock.specification.StockItemSpecification;
-
-import org.springframework.data.domain.Sort;
-import org.springframework.data.jpa.domain.Specification;
 
 
 import java.util.List;
@@ -43,16 +43,19 @@ public class StockItemService {
             );
         }
 
+        // PACKAGING tipi için PackagingKind zorunlu; diğerleri için null olmalı
+        validatePackagingKind(request.itemType(), request.packagingKind(), request.unit());
+
         StockItem stockItem = new StockItem();
         stockItem.setName(request.name().trim());
         stockItem.setSku(normalizedSku);
         stockItem.setDescription(normalizeDescription(request.description()));
         stockItem.setItemType(request.itemType());
         stockItem.setUnit(request.unit());
+        stockItem.setPackagingKind(request.packagingKind());
         stockItem.setActive(true);
 
         StockBalance balance = new StockBalance(stockItem);
-
         stockItem.assignBalance(balance);
 
         StockItem savedStockItem = stockItemRepository.save(stockItem);
@@ -121,6 +124,7 @@ public class StockItemService {
                 stockItem.getDescription(),
                 stockItem.getItemType(),
                 stockItem.getUnit(),
+                stockItem.getPackagingKind(),
                 balance.getOnHandQuantity(),
                 balance.getReservedQuantity(),
                 balance.getAvailableQuantity(),
@@ -128,6 +132,39 @@ public class StockItemService {
                 stockItem.getCreatedAt(),
                 stockItem.getUpdatedAt()
         );
+    }
+
+    /**
+     * PACKAGING tipi için packagingKind zorunlu ve unit PIECE olmalı.
+     * Diğer tipler için packagingKind null olmalı.
+     */
+    private void validatePackagingKind(
+            StockItemType itemType,
+            PackagingKind packagingKind,
+            StockUnit unit
+    ) {
+        if (itemType == StockItemType.PACKAGING) {
+            if (packagingKind == null) {
+                throw new ResponseStatusException(
+                        HttpStatus.BAD_REQUEST,
+                        "PACKAGING tipindeki stok kalemleri için packagingKind belirtilmelidir " +
+                                "(BOTTLE, MALE_SET, FEMALE_SET, UNISEX_SET)"
+                );
+            }
+            if (unit != StockUnit.PIECE) {
+                throw new ResponseStatusException(
+                        HttpStatus.BAD_REQUEST,
+                        "PACKAGING tipindeki stok kalemleri PIECE birimini kullanmalıdır"
+                );
+            }
+        } else {
+            if (packagingKind != null) {
+                throw new ResponseStatusException(
+                        HttpStatus.BAD_REQUEST,
+                        "packagingKind yalnızca PACKAGING tipindeki stok kalemleri için kullanılabilir"
+                );
+            }
+        }
     }
 
     private String normalizeDescription(String description) {

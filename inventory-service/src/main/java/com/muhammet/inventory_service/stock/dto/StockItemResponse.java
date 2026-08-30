@@ -1,5 +1,6 @@
 package com.muhammet.inventory_service.stock.dto;
 
+import com.muhammet.inventory_service.stock.enums.PackagingKind;
 import com.muhammet.inventory_service.stock.enums.StockItemType;
 import com.muhammet.inventory_service.stock.enums.StockUnit;
 
@@ -14,6 +15,7 @@ public record StockItemResponse(
         String description,
         StockItemType itemType,
         StockUnit unit,
+        PackagingKind packagingKind,
         BigDecimal onHandQuantity,
         BigDecimal reservedQuantity,
         BigDecimal availableQuantity,

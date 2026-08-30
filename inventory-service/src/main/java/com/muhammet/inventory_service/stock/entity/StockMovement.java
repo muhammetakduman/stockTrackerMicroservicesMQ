@@ -611,9 +611,92 @@ public class StockMovement {
             );
         }
     }
+
     // =========================================================
-// ADJUSTMENT
-// =========================================================
+    // PRODUCTION
+    // =========================================================
+
+    /*
+     * Üretimde hammadde/ambalaj tüketimi hareketi.
+     * consumedQuantity pozitif gelir; quantityChange = -consumedQuantity.
+     * sourceEventId: batchId + stockItemId + "CONSUMPTION" → deterministik UUID.
+     */
+    public static StockMovement productionConsumption(
+            UUID batchId,
+            StockItem stockItem,
+            BigDecimal consumedQuantity,
+            BigDecimal previousOnHandQuantity,
+            BigDecimal newOnHandQuantity,
+            Instant occurredAt
+    ) {
+        Objects.requireNonNull(batchId, "Batch ID cannot be null");
+        validateSaleResult(consumedQuantity, previousOnHandQuantity, newOnHandQuantity);
+        UUID sourceEventId = deterministicSourceEventId(batchId, stockItem.getId(), "CONSUMPTION");
+        return new StockMovement(
+                sourceEventId,
+                stockItem,
+                StockMovementType.PRODUCTION_CONSUMPTION,
+                consumedQuantity.negate(),
+                previousOnHandQuantity,
+                newOnHandQuantity,
+                "PRODUCTION_BATCH",
+                batchId.toString(),
+                occurredAt,
+                null,
+                null
+        );
+    }
+
+    /*
+     * Üretimde nihai ürün artışı hareketi.
+     * sourceEventId: batchId + stockItemId + "OUTPUT" → deterministik UUID.
+     */
+    public static StockMovement productionOutput(
+            UUID batchId,
+            StockItem stockItem,
+            BigDecimal producedQuantity,
+            BigDecimal previousOnHandQuantity,
+            BigDecimal newOnHandQuantity,
+            Instant occurredAt
+    ) {
+        Objects.requireNonNull(batchId, "Batch ID cannot be null");
+        validatePurchaseResult(producedQuantity, previousOnHandQuantity, newOnHandQuantity);
+        UUID sourceEventId = deterministicSourceEventId(batchId, stockItem.getId(), "OUTPUT");
+        return new StockMovement(
+                sourceEventId,
+                stockItem,
+                StockMovementType.PRODUCTION_OUTPUT,
+                producedQuantity,
+                previousOnHandQuantity,
+                newOnHandQuantity,
+                "PRODUCTION_BATCH",
+                batchId.toString(),
+                occurredAt,
+                null,
+                null
+        );
+    }
+
+    /*
+     * Aynı batch'te birden fazla movement oluşurken
+     * source_event_id UNIQUE constraint çakışmaması için
+     * deterministik UUID üretir (type-3 / name-based MD5).
+     */
+    private static UUID deterministicSourceEventId(
+            UUID batchId,
+            UUID stockItemId,
+            String suffix
+    ) {
+        String seed = batchId + ":" + stockItemId + ":" + suffix;
+        return UUID.nameUUIDFromBytes(
+                seed.getBytes(java.nio.charset.StandardCharsets.UTF_8)
+        );
+    }
+
+
+    // =========================================================
+    // ADJUSTMENT
+    // =========================================================
 
     public static StockMovement adjustment(
             UUID adjustmentId,

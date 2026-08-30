@@ -1,5 +1,6 @@
 package com.muhammet.inventory_service.stock.entity;
 
+import com.muhammet.inventory_service.stock.enums.PackagingKind;
 import com.muhammet.inventory_service.stock.enums.StockItemType;
 import com.muhammet.inventory_service.stock.enums.StockUnit;
 import jakarta.persistence.*;
@@ -44,6 +45,15 @@ public class StockItem {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false , length = 30)
     private StockUnit unit;
+
+    /**
+     * Yalnızca itemType = PACKAGING olan StockItem'lar için kullanılır.
+     * ESSENCE veya FINISHED_PRODUCT için null olmalıdır.
+     * PACKAGING için BOTTLE, MALE_SET, FEMALE_SET veya UNISEX_SET olmalıdır.
+     */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "packaging_kind", length = 20)
+    private PackagingKind packagingKind;
 
     @Column(nullable = false)
     private boolean active = true;

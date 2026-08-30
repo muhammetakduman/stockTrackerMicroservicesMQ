@@ -74,12 +74,32 @@ public interface StockBalanceRepository
     );
 
     @Query("""
-        SELECT COUNT(sb)
-        FROM StockBalance sb
-        WHERE sb.stockItem.active = true
-          AND (
-              sb.onHandQuantity - sb.reservedQuantity
-          ) <= 0
-        """)
+         SELECT COUNT(sb)
+         FROM StockBalance sb
+         WHERE sb.stockItem.active = true
+           AND (
+               sb.onHandQuantity - sb.reservedQuantity
+           ) <= 0
+         """)
     long countOutOfStock();
+
+    /**
+     * Production işleminde 4 StockBalance'ı deterministik sırayla (UUID order)
+     * PESSIMISTIC_WRITE lock altında getirir.
+     *
+     * Deadlock prevention: Tüm concurrent transaction'lar aynı sırayla lock alır.
+     * Caller: stockItemIds listesini UUID.compareTo() sırasına göre sıralı geçmeli.
+     */
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @EntityGraph(attributePaths = "stockItem")
+    @Query("""
+            SELECT sb
+            FROM StockBalance sb
+            WHERE sb.stockItem.id IN :stockItemIds
+            ORDER BY sb.stockItem.id ASC
+            """)
+    List<StockBalance> findAllByStockItemIdsForUpdate(
+            @Param("stockItemIds")
+            List<UUID> stockItemIds
+    );
 }
