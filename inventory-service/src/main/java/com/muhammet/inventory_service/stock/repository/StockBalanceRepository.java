@@ -72,4 +72,14 @@ public interface StockBalanceRepository
             @Param("threshold")
             BigDecimal threshold
     );
+
+    @Query("""
+        SELECT COUNT(sb)
+        FROM StockBalance sb
+        WHERE sb.stockItem.active = true
+          AND (
+              sb.onHandQuantity - sb.reservedQuantity
+          ) <= 0
+        """)
+    long countOutOfStock();
 }
