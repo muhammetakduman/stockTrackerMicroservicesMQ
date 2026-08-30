@@ -7,17 +7,20 @@ import com.muhammet.inventory_service.stock.repository.StockMovementRepository;
 
 import lombok.RequiredArgsConstructor;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.time.LocalDate;
+import java.time.ZoneId;
 import java.time.ZoneOffset;
 
 @Service
 @RequiredArgsConstructor
 public class InventorySummaryService {
-
+    @Value("${app.business.time-zone:Europe/Istanbul}")
+    private String businessTimeZone;
     private final StockItemRepository stockItemRepository;
     private final StockBalanceRepository stockBalanceRepository;
     private final StockMovementRepository stockMovementRepository;
@@ -39,16 +42,32 @@ public class InventorySummaryService {
                 stockBalanceRepository.countOutOfStock();
 
 
-        Instant startOfToday =
-                LocalDate.now(ZoneOffset.UTC)
-                        .atStartOfDay()
-                        .toInstant(ZoneOffset.UTC);
+        ZoneId zoneId =
+                ZoneId.of(
+                        businessTimeZone
+                );
 
+        LocalDate today =
+                LocalDate.now(
+                        zoneId
+                );
+
+        Instant startOfToday =
+                today
+                        .atStartOfDay(zoneId)
+                        .toInstant();
+
+        Instant startOfTomorrow =
+                today
+                        .plusDays(1)
+                        .atStartOfDay(zoneId)
+                        .toInstant();
 
         long stockMovementCountToday =
                 stockMovementRepository
-                        .countByCreatedAtGreaterThanEqual(
-                                startOfToday
+                        .countByCreatedAtGreaterThanEqualAndCreatedAtLessThan(
+                                startOfToday,
+                                startOfTomorrow
                         );
 
 

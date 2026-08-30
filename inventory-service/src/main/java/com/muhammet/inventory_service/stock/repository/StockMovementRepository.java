@@ -24,7 +24,8 @@ public interface StockMovementRepository
     findAllByStockItem_IdOrderByCreatedAtDesc(
             UUID stockItemId
     );
-    long countByCreatedAtGreaterThanEqual(
-            Instant from
+    long countByCreatedAtGreaterThanEqualAndCreatedAtLessThan(
+            Instant from,
+            Instant to
     );
 }
