@@ -9,6 +9,8 @@ import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.math.BigDecimal;
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -27,5 +29,34 @@ public interface PurchaseRepository extends JpaRepository<Purchase , Long> , Jpa
         """)
     Optional<Purchase> findByIdForUpdate(
             @Param("id") Long id
+    );
+
+    long countByStatus(
+            PurchaseStatus status
+    );
+
+    long countByPurchasedAtGreaterThanEqualAndPurchasedAtLessThan(
+            Instant from,
+            Instant to
+    );
+    @Query("""
+        SELECT COALESCE(
+            SUM(p.quantity * p.unitPrice),
+            0
+        )
+        FROM Purchase p
+        WHERE p.purchasedAt >= :from
+          AND p.purchasedAt < :to
+          AND p.status = :status
+        """)
+    BigDecimal sumPurchaseAmount(
+            @Param("from")
+            Instant from,
+
+            @Param("to")
+            Instant to,
+
+            @Param("status")
+            PurchaseStatus status
     );
 }

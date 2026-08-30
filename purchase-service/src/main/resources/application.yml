@@ -70,6 +70,8 @@ logging:
     org.hibernate.SQL: WARN
 
 app:
+  business:
+    time-zone: Europe/Istanbul
   outbox:
     publisher:
       fixed-delay-ms: 2000
