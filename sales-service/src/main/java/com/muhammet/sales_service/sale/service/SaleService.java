@@ -1,6 +1,8 @@
 package com.muhammet.sales_service.sale.service;
 
 
+import com.muhammet.sales_service.customer.domain.Customer;
+import com.muhammet.sales_service.customer.repository.CustomerRepository;
 import com.muhammet.sales_service.outbox.service.SalesOutboxService;
 import com.muhammet.sales_service.sale.domain.Sale;
 import com.muhammet.sales_service.sale.domain.SaleStatus;
@@ -33,6 +35,7 @@ import java.util.Objects;
 @RequiredArgsConstructor
 @Slf4j
 public class SaleService {
+    private final CustomerRepository customerRepository;
 
     private final SaleRepository
             saleRepository;
@@ -61,13 +64,38 @@ public class SaleService {
         /*
          * 1. Domain entity oluştur.
          */
+        Customer customer =
+                customerRepository
+                        .findById(
+                                request.customerId()
+                        )
+                        .orElseThrow(() ->
+                                new ResponseStatusException(
+                                        HttpStatus.NOT_FOUND,
+                                        "Customer not found: "
+                                                + request.customerId()
+                                )
+                        );
+
+
+        if (!customer.isActive()) {
+
+            throw new ResponseStatusException(
+                    HttpStatus.CONFLICT,
+                    "Customer is inactive"
+            );
+        }
         Sale sale =
                 Sale.create(
                         sellerId,
+
+                        customer.getId(),
+                        customer.getFullName(),
                         request.stockItemId(),
                         request.quantity(),
                         request.unitPrice(),
-                        request.soldAt()
+                        request.soldAt(),
+                        request.note()
                 );
 
 

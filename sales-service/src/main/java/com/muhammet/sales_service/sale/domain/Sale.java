@@ -112,10 +112,13 @@ public class Sale {
 
     private Sale(
             UUID sellerId,
+            UUID customerId,
+            String customerNameSnapshot,
             UUID stockItemId,
             BigDecimal quantity,
             BigDecimal unitPrice,
-            Instant soldAt
+            Instant soldAt,
+            String note
     ) {
 
         validateSellerId(sellerId);
@@ -143,26 +146,46 @@ public class Sale {
 
         this.status =
                 SaleStatus.PENDING_STOCK_UPDATE;
+        this.customerId = Objects.requireNonNull(
+                customerId,
+                "Customer ID cannot be null"
+        );
+
+        if (customerNameSnapshot == null ||
+                customerNameSnapshot.isBlank()) {
+
+            throw new IllegalArgumentException(
+                    "Customer name cannot be blank"
+            );
+        }
+
+        this.customerNameSnapshot =
+                customerNameSnapshot.trim();
     }
 
 
     public static Sale create(
             UUID sellerId,
+            UUID customerId,
+            String customerNameSnapshot,
             UUID stockItemId,
             BigDecimal quantity,
             BigDecimal unitPrice,
-            Instant soldAt
+            Instant soldAt,
+            String note
     ) {
 
         return new Sale(
                 sellerId,
+                customerId,
+                customerNameSnapshot,
                 stockItemId,
                 quantity,
                 unitPrice,
-                soldAt
+                soldAt,
+                note
         );
     }
-
 
     public void markStockUpdateCompleted() {
 
@@ -295,4 +318,20 @@ public class Sale {
             );
         }
     }
+    @Column(
+            name = "customer_id"
+    )
+    private UUID customerId;
+
+    @Column(
+            name = "customer_name_snapshot",
+            length = 150
+    )
+    private String customerNameSnapshot;
+
+    @Column(
+            name = "note",
+            length = 1000
+    )
+    private String note;
 }

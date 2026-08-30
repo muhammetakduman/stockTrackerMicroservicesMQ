@@ -14,6 +14,10 @@ public record SaleResponse(
 
         UUID sellerId,
 
+        UUID customerId,
+
+        String customerName,
+
         UUID stockItemId,
 
         BigDecimal quantity,
@@ -21,6 +25,8 @@ public record SaleResponse(
         BigDecimal unitPrice,
 
         BigDecimal totalPrice,
+
+        String note,
 
         SaleStatus status,
 
@@ -41,10 +47,13 @@ public record SaleResponse(
         return new SaleResponse(
                 sale.getId(),
                 sale.getSellerId(),
+                sale.getCustomerId(),
+                sale.getCustomerNameSnapshot(),
                 sale.getStockItemId(),
                 sale.getQuantity(),
                 sale.getUnitPrice(),
                 sale.getTotalPrice(),
+                sale.getNote(),
                 sale.getStatus(),
                 sale.getFailureReason(),
                 sale.getSoldAt(),
