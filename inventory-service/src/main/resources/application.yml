@@ -63,6 +63,8 @@ management:
       show-details: always
 
 app:
+  business:
+    time-zone: Europe/Istanbul
   messaging:
     sale:
       exchange: sale.exchange
