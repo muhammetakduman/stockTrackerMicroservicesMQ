@@ -28,7 +28,11 @@ import java.util.UUID;
                 @Index(
                         name = "idx_sales_created_at",
                         columnList = "created_at"
-                )
+                ),
+                @Index(
+                        name = "idx_sales_customer_id",
+                        columnList = "customer_id"
+                ),
         }
 )
 @Getter
@@ -45,6 +49,15 @@ public class Sale {
             columnDefinition = "uuid"
     )
     private UUID sellerId;
+
+    @Column(name = "customer_id",columnDefinition = "uuid")
+    private UUID customerId;
+
+    @Column(name="customer_name_snapshot", length = 150)
+    private String customerNameSnapshot;
+
+    @Column(name = "note", length = 500)
+    private String note;
 
     @Column(
             name = "stock_item_id",
@@ -123,29 +136,6 @@ public class Sale {
 
         validateSellerId(sellerId);
 
-        this.stockItemId = Objects.requireNonNull(
-                stockItemId,
-                "Stock item ID cannot be null"
-        );
-
-        validatePositiveQuantity(quantity);
-
-        validateUnitPrice(unitPrice);
-
-        this.sellerId = sellerId;
-        this.quantity = quantity;
-        this.unitPrice = unitPrice;
-
-        this.totalPrice =
-                unitPrice.multiply(quantity);
-
-        this.soldAt = Objects.requireNonNull(
-                soldAt,
-                "Sold time cannot be null"
-        );
-
-        this.status =
-                SaleStatus.PENDING_STOCK_UPDATE;
         this.customerId = Objects.requireNonNull(
                 customerId,
                 "Customer ID cannot be null"
@@ -161,6 +151,34 @@ public class Sale {
 
         this.customerNameSnapshot =
                 customerNameSnapshot.trim();
+
+        this.stockItemId = Objects.requireNonNull(
+                stockItemId,
+                "Stock item ID cannot be null"
+        );
+
+        validatePositiveQuantity(quantity);
+        validateUnitPrice(unitPrice);
+
+        this.sellerId = sellerId;
+        this.quantity = quantity;
+        this.unitPrice = unitPrice;
+
+        this.totalPrice =
+                unitPrice.multiply(quantity);
+
+        this.soldAt = Objects.requireNonNull(
+                soldAt,
+                "Sold time cannot be null"
+        );
+
+        this.note =
+                note == null || note.isBlank()
+                        ? null
+                        : note.trim();
+
+        this.status =
+                SaleStatus.PENDING_STOCK_UPDATE;
     }
 
 
@@ -318,20 +336,5 @@ public class Sale {
             );
         }
     }
-    @Column(
-            name = "customer_id"
-    )
-    private UUID customerId;
 
-    @Column(
-            name = "customer_name_snapshot",
-            length = 150
-    )
-    private String customerNameSnapshot;
-
-    @Column(
-            name = "note",
-            length = 1000
-    )
-    private String note;
 }

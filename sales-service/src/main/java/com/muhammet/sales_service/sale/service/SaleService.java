@@ -16,6 +16,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.muhammet.sales_service.customer.domain.Customer;
+import com.muhammet.sales_service.customer.repository.CustomerRepository;
 
 import com.muhammet.sales_service.sale.specification.SaleSpecification;
 
@@ -35,6 +37,9 @@ import java.util.Objects;
 @RequiredArgsConstructor
 @Slf4j
 public class SaleService {
+
+
+
     private final CustomerRepository customerRepository;
 
     private final SaleRepository
@@ -91,10 +96,12 @@ public class SaleService {
 
                         customer.getId(),
                         customer.getFullName(),
+
                         request.stockItemId(),
                         request.quantity(),
                         request.unitPrice(),
                         request.soldAt(),
+
                         request.note()
                 );
 

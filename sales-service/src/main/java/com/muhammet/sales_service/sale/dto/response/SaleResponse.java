@@ -1,6 +1,5 @@
 package com.muhammet.sales_service.sale.dto.response;
 
-
 import com.muhammet.sales_service.sale.domain.Sale;
 import com.muhammet.sales_service.sale.domain.SaleStatus;
 

@@ -17,11 +17,15 @@ public record CreateSaleRequest(
         UUID stockItemId,
 
         @NotNull
-        @DecimalMin("0.001")
+        @DecimalMin(
+                value = "0.001"
+        )
         BigDecimal quantity,
 
         @NotNull
-        @DecimalMin("0.00")
+        @DecimalMin(
+                value = "0.00"
+        )
         BigDecimal unitPrice,
 
         @NotNull
