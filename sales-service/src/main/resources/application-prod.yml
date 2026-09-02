@@ -7,8 +7,14 @@ spring:
     driver-class-name: org.postgresql.Driver
 
   jpa:
+    open-in-view: false
     hibernate:
       ddl-auto: validate
+
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    validate-on-migrate: true
 
   rabbitmq:
     host: ${RABBITMQ_HOST}
@@ -21,7 +27,6 @@ spring:
       resourceserver:
         jwt:
           public-key-location: ${JWT_PUBLIC_KEY_LOCATION}
-
 
 server:
   port: ${SERVER_PORT:8083}
