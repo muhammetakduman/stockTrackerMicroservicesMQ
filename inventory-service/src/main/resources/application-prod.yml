@@ -1,19 +1,64 @@
 spring:
+
+  # ============================================================
+  # PRODUCTION DATABASE
+  #
+  # Base application.yml'deki localhost/default değerlerini
+  # production environment değerleriyle override ediyoruz.
+  # ============================================================
   datasource:
-    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5433}/${DB_NAME:inventory_db}
-    username: ${DB_USERNAME:inventory_user}
-    password: ${DB_PASSWORD:inventory_pass}
+    url: jdbc:postgresql://${DB_HOST}:${DB_PORT:5432}/${DB_NAME}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+
+
+  # ============================================================
+  # PRODUCTION JPA
+  #
+  # Production'da Hibernate schema değiştirmeyecek.
+  # Flyway değiştirecek, Hibernate sadece doğrulayacak.
+  # ============================================================
+  jpa:
+    hibernate:
+      ddl-auto: validate
+
+
+  # ============================================================
+  # FLYWAY
+  #
+  # application.yml'deki enabled:false değerini production'da
+  # true ile override ediyoruz.
+  # ============================================================
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    validate-on-migrate: true
+
+
+  # ============================================================
+  # PRODUCTION RABBITMQ
+  #
+  # Base dosyadaki listener/retry/publisher ayarları miras alınır.
+  # Burada sadece bağlantı bilgilerini override ediyoruz.
+  # ============================================================
   rabbitmq:
-    host: ${RABBITMQ_HOST:localhost}
+    host: ${RABBITMQ_HOST}
     port: ${RABBITMQ_PORT:5672}
-    username: ${RABBITMQ_USERNAME:guest}
-    password: ${RABBITMQ_PASSWORD:guest}
+    username: ${RABBITMQ_USERNAME}
+    password: ${RABBITMQ_PASSWORD}
+
+
+  # ============================================================
+  # PRODUCTION JWT
+  #
+  # Base dosyadaki dev-public.pem yerine production key.
+  # ============================================================
   security:
     oauth2:
       resourceserver:
         jwt:
-          public-key-location: ${JWT_PUBLIC_KEY_LOCATION:classpath:certs/dev-public.pem}
+          public-key-location: ${JWT_PUBLIC_KEY_LOCATION}
+
 
 server:
   port: ${SERVER_PORT:8081}
-
