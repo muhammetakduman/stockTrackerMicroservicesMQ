@@ -26,6 +26,11 @@ spring:
         jdbc:
           time_zone: UTC
 
+  # Mevcut local identity_db Hibernate tarafından yönetildiği için
+  # normal development sırasında Flyway kapalı.
+  flyway:
+    enabled: false
+
 
 app:
   security:
@@ -35,21 +40,26 @@ app:
       access-token-expiration-seconds: ${JWT_ACCESS_TOKEN_EXPIRATION:900}
       refresh-token-expiration-seconds: ${JWT_REFRESH_TOKEN_EXPIRATION:604800}
 
+
 management:
   endpoints:
     web:
       exposure:
         include: health,info
+
   endpoint:
     health:
       show-details: when_authorized
 
+
 server:
   port: 8080
+
   error:
     include-message: never
     include-binding-errors: never
     include-stacktrace: never
+
 
 logging:
   level:

@@ -1,0 +1,51 @@
+spring:
+
+  # ============================================================
+  # PRODUCTION DATABASE
+  #
+  # Production DB bilgileri Dokploy environment variables
+  # üzerinden sağlanacak.
+  # ============================================================
+  datasource:
+    url: ${DB_URL}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+
+
+  # ============================================================
+  # JPA / HIBERNATE
+  #
+  # Production schema'sını Hibernate değiştirmez.
+  # Flyway migration yapar, Hibernate sadece doğrular.
+  # ============================================================
+  jpa:
+    hibernate:
+      ddl-auto: validate
+
+
+  # ============================================================
+  # FLYWAY
+  # ============================================================
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    validate-on-migrate: true
+
+
+# ==============================================================
+# PRODUCTION JWT
+#
+# Dev cert'leri production'da kullanılmaz.
+# Dokploy/container tarafında gerçek key dosyaları sağlanacak.
+# ==============================================================
+app:
+  security:
+    jwt:
+      private-key-location: ${JWT_PRIVATE_KEY_PATH}
+      public-key-location: ${JWT_PUBLIC_KEY_PATH}
+      access-token-expiration-seconds: ${JWT_ACCESS_TOKEN_EXPIRATION:900}
+      refresh-token-expiration-seconds: ${JWT_REFRESH_TOKEN_EXPIRATION:604800}
+
+
+server:
+  port: ${SERVER_PORT:8080}
