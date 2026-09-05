@@ -20,10 +20,10 @@ import org.springframework.transaction.annotation.Transactional;
 @Component
 public class AdminInitializer implements CommandLineRunner {
 
-    @Value("${admin.email:admin@example.com}")
+    @Value("${admin.email}")
     private String adminEmail;
 
-    @Value("${admin.password:Admin123!@#}")
+    @Value("${admin.password}")
     private String adminPassword;
 
     private final UserRepository userRepository;

@@ -12,6 +12,11 @@ spring:
     password: ${DB_PASSWORD}
 
 
+    admin:
+      email: ${ADMIN_EMAIL}
+      password: ${ADMIN_PASSWORD}
+
+
   # ============================================================
   # JPA / HIBERNATE
   #
@@ -21,6 +26,8 @@ spring:
   jpa:
     hibernate:
       ddl-auto: validate
+
+
 
 
   # ============================================================
