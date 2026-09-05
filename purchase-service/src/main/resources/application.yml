@@ -19,6 +19,11 @@ spring:
         jdbc:
           time_zone: UTC
 
+  # Mevcut local purchase_db Hibernate tarafından oluşturulduğu için
+  # normal development profilinde Flyway'i henüz çalıştırmıyoruz.
+  flyway:
+    enabled: false
+
   rabbitmq:
     host: ${RABBITMQ_HOST:localhost}
     port: ${RABBITMQ_PORT:5672}
@@ -72,12 +77,14 @@ logging:
 app:
   business:
     time-zone: Europe/Istanbul
+
   outbox:
     publisher:
       fixed-delay-ms: 2000
       batch-size: 20
       max-attempts: 5
       confirm-timeout-ms: 5000
+
   messaging:
     purchase:
       exchange: purchase.exchange

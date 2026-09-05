@@ -7,6 +7,7 @@ spring:
     username: ${DB_USERNAME}
     password: ${DB_PASSWORD}
     driver-class-name: org.postgresql.Driver
+
     hikari:
       minimum-idle: 2
       maximum-pool-size: 10
@@ -25,6 +26,12 @@ spring:
         format_sql: false
         jdbc:
           time_zone: UTC
+
+  # Production schema değişikliklerini Hibernate değil Flyway yönetir.
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    validate-on-migrate: true
 
   rabbitmq:
     host: ${RABBITMQ_HOST}
@@ -61,6 +68,7 @@ management:
     web:
       exposure:
         include: health,info
+
   endpoint:
     health:
       show-details: never
@@ -79,6 +87,8 @@ logging:
     org.springframework.security: WARN
     org.hibernate.SQL: WARN
 
+# Diğer app.* değerleri application.yml'den miras alınır.
+# Burada sadece production'da override etmek istediğimiz değerler var.
 app:
   messaging:
     purchase:

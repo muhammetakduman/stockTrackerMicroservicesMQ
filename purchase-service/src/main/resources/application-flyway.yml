@@ -1,0 +1,24 @@
+spring:
+
+  # ============================================================
+  # FLYWAY TEST DATABASE
+  #
+  # Mevcut purchase_db'ye dokunmuyoruz.
+  # Migration'ı tamamen boş purchase_flyway_test üzerinde test ediyoruz.
+  # ============================================================
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5434}/${DB_NAME:purchase_flyway_test}
+    username: ${DB_USERNAME:purchase_user}
+    password: ${DB_PASSWORD:purchase_pass}
+
+  # Hibernate tablo oluşturmaz/değiştirmez.
+  # Flyway migration sonrası entity-schema uyumunu kontrol eder.
+  jpa:
+    hibernate:
+      ddl-auto: validate
+
+  # Base application.yml içindeki enabled:false değerini override eder.
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    validate-on-migrate: true
