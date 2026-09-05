@@ -34,6 +34,7 @@ import java.util.UUID;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class ProcessedEvent {
     @Id
+    @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
     @Column(
             name = "event_id",
