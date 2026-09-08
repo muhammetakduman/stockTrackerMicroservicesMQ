@@ -1,4 +1,7 @@
 spring:
+  config:
+    import: optional:file:.env[.properties]
+
   application:
     name: identity-service
 
@@ -7,6 +10,7 @@ spring:
     username: ${DB_USERNAME:identity_user}
     password: ${DB_PASSWORD:identity_pass}
     driver-class-name: org.postgresql.Driver
+
     hikari:
       maximum-pool-size: 10
       minimum-idle: 2
@@ -26,10 +30,18 @@ spring:
         jdbc:
           time_zone: UTC
 
-  # Mevcut local identity_db Hibernate tarafından yönetildiği için
-  # normal development sırasında Flyway kapalı.
+  # Normal local development sırasında Flyway kapalı.
   flyway:
     enabled: false
+
+
+# ============================================================
+# ADMIN INITIALIZER
+# .env içerisindeki ADMIN_EMAIL ve ADMIN_PASSWORD buraya gelir.
+# ============================================================
+admin:
+  email: ${ADMIN_EMAIL}
+  password: ${ADMIN_PASSWORD}
 
 
 app:
