@@ -2,18 +2,21 @@ package com.muhammet.identity_service.user.service;
 
 import com.muhammet.identity_service.exception.RoleNotFoundException;
 import com.muhammet.identity_service.exception.UserNotFoundException;
+import com.muhammet.identity_service.exception.EmailAlreadyExistsException;
 import com.muhammet.identity_service.role.entity.Role;
 import com.muhammet.identity_service.role.entity.RoleName;
 import com.muhammet.identity_service.role.repository.RoleRepository;
 import com.muhammet.identity_service.user.dto.UpdateRolesRequest;
 import com.muhammet.identity_service.user.dto.UpdateStatusRequest;
 import com.muhammet.identity_service.user.dto.UserResponse;
+import com.muhammet.identity_service.user.dto.CreateUserRequest;
 import com.muhammet.identity_service.user.entity.User;
 import com.muhammet.identity_service.user.mapper.UserMapper;
 import com.muhammet.identity_service.user.repository.UserRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -28,11 +31,13 @@ public class UserService {
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
     private final UserMapper userMapper;
+    private final PasswordEncoder passwordEncoder;
 
-    public UserService(UserRepository userRepository, RoleRepository roleRepository, UserMapper userMapper) {
+    public UserService(UserRepository userRepository, RoleRepository roleRepository, UserMapper userMapper, PasswordEncoder passwordEncoder) {
         this.userRepository = userRepository;
         this.roleRepository = roleRepository;
         this.userMapper = userMapper;
+        this.passwordEncoder = passwordEncoder;
     }
 
     @Transactional(readOnly = true)
@@ -81,5 +86,27 @@ public class UserService {
         log.info("Admin updated roles for user {} to {}", userId, assignedRoles);
         return userMapper.toResponse(user);
     }
-}
 
+    @Transactional
+    public UserResponse createUserAsAdmin(CreateUserRequest request) {
+        String normalizedEmail = request.email().toLowerCase().strip();
+
+        if (userRepository.existsByEmail(normalizedEmail)) {
+            throw new EmailAlreadyExistsException(normalizedEmail);
+        }
+
+        Role role = roleRepository.findByName(request.role())
+                .orElseThrow(() -> new RoleNotFoundException(request.role().name()));
+
+        User user = new User();
+        user.setFirstName(request.firstName().strip());
+        user.setLastName(request.lastName().strip());
+        user.setEmail(normalizedEmail);
+        user.setPasswordHash(passwordEncoder.encode(request.password()));
+        user.addRole(role);
+
+        user = userRepository.save(user);
+        log.info("User created by admin with role {}: {}", request.role(), normalizedEmail);
+        return userMapper.toResponse(user);
+    }
+}
